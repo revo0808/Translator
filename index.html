@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Euro Fling">
+  <meta name="theme-color" content="#2a1a0e">
+  <title>Euro Fling — Travel Translator</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #f5f0e8;
+      --bg2: #ede7d9;
+      --surface: #fffdf8;
+      --border: #d5c9b2;
+      --text: #2a1a0e;
+      --text2: #7a6550;
+      --accent: #c96d40;
+      --accent-soft: rgba(201,109,64,0.12);
+      --tab-bg: #231710;
+      --tab-active: #e07845;
+      --shadow: rgba(42,26,14,0.1);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-t: env(safe-area-inset-top, 0px);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a1510;
+        --bg2: #241d16;
+        --surface: #201912;
+        --border: #3a2e22;
+        --text: #f0e8d5;
+        --text2: #9a856e;
+        --accent: #d47848;
+        --accent-soft: rgba(212,120,72,0.15);
+        --tab-bg: #0f0c08;
+        --tab-active: #d47848;
+        --shadow: rgba(0,0,0,0.4);
+      }
+    }
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html, body { height:100%; }
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding-top: var(--safe-t);
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: var(--tab-bg);
+      padding: 12px 18px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 22px;
+      color: #f0e0c8;
+      letter-spacing: 0.02em;
+    }
+    .logo span { color: var(--tab-active); }
+    .offline-pill {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+      background: rgba(255,255,255,0.1);
+      color: #f0e0c8;
+      padding: 3px 10px; border-radius: 20px;
+      display: none;
+    }
+    .offline-pill.show { display: block; }
+
+    /* ── LANG BAR ── */
+    .lang-bar {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .lang-btn {
+      flex: 1;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 10px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 14px; font-weight: 700;
+      color: var(--text);
+      cursor: pointer;
+      text-align: center;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      touch-action: manipulation;
+    }
+    .lang-btn:active { opacity: 0.7; }
+    .lang-flag { font-size: 18px; }
+    .swap-btn {
+      background: var(--accent); border: none; border-radius: 50%;
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; color: white; cursor: pointer;
+      flex-shrink: 0; touch-action: manipulation;
+      transition: transform 0.2s;
+    }
+    .swap-btn:active { transform: scale(0.88) rotate(180deg); }
+
+    /* ── TABS ── */
+    .content-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+    .tab-panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .tab-panel.active { display: flex; }
+
+    /* ── TRANSLATE TAB ── */
+    .translate-wrap {
+      flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain; padding: 14px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 14px; overflow: hidden;
+    }
+    .card-label {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text2); padding: 10px 14px 0;
+    }
+    textarea.input-text {
+      width: 100%; min-height: 90px;
+      padding: 8px 14px 10px;
+      background: transparent; border: none; outline: none;
+      font-family: 'Nunito', sans-serif; font-size: 17px;
+      color: var(--text); resize: none; line-height: 1.5;
+    }
+    textarea.input-text::placeholder { color: var(--text2); opacity: 0.55; }
+    .card-footer {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 10px;
+      border-top: 1px solid var(--border);
+      background: var(--bg2);
+    }
+    .icon-btn {
+      background: none; border: none; padding: 7px;
+      cursor: pointer; color: var(--text2); font-size: 17px;
+      border-radius: 8px; touch-action: manipulation;
+    }
+    .icon-btn:active { background: var(--border); }
+    .spacer { flex: 1; }
+    .translate-btn {
+      background: var(--accent); color: white; border: none;
+      border-radius: 9px; padding: 8px 20px;
+      font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700;
+      cursor: pointer; touch-action: manipulation;
+    }
+    .translate-btn:active { opacity: 0.82; }
+
+    .output-text {
+      padding: 8px 14px 14px; font-size: 20px;
+      font-family: 'Playfair Display', serif;
+      line-height: 1.55; color: var(--text);
+      min-height: 68px;
+    }
+    .output-placeholder { color: var(--text2); opacity: 0.45; font-style: italic; font-size: 16px; }
+    .match-note { font-size: 12px; color: var(--text2); font-style: italic; padding: 0 14px 8px; }
+    .output-actions { display: flex; gap: 6px; }
+    .act-btn {
+      background: none; border: 1px solid var(--border);
+      border-radius: 8px; padding: 6px 12px;
+      font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 600;
+      color: var(--text2); cursor: pointer; display: flex; align-items: center; gap: 5px;
+      touch-action: manipulation;
+    }
+    .act-btn:active { background: var(--bg2); }
+    .act-btn.active-fav { color: var(--accent); border-color: var(--accent); }
+
+    /* Loading dots */
+    .dots { display: none; gap: 5px; padding: 14px; align-items: center; }
+    .dots.show { display: flex; }
+    .dot {
+      width: 8px; height: 8px; background: var(--accent); border-radius: 50%;
+      animation: dotbounce 1s infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.15s; }
+    .dot:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes dotbounce {
+      0%,80%,100% { transform: translateY(0); }
+      40% { transform: translateY(-7px); }
+    }
+
+    /* ── PHRASEBOOK TAB ── */
+    .cat-bar {
+      display: flex; gap: 8px;
+      padding: 12px 14px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .cat-bar::-webkit-scrollbar { display: none; }
+    .cat-pill {
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 20px; padding: 6px 14px;
+      font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 600;
+      color: var(--text2); cursor: pointer; white-space: nowrap;
+      flex-shrink: 0; touch-action: manipulation;
+    }
+    .cat-pill.on { background: var(--accent); border-color: var(--accent); color: white; }
+    .phrase-list {
+      flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain; padding: 10px 14px 14px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .phrase-card {
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 12px; overflow: hidden; cursor: pointer;
+    }
+    .phrase-top {
+      padding: 12px 12px 12px 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .phrase-en { font-size: 15px; font-weight: 600; color: var(--text); flex: 1; }
+    .phrase-tgt {
+      font-family: 'Playfair Display', serif; font-style: italic;
+      font-size: 14px; color: var(--accent); flex: 1; text-align: right;
+    }
+    .chevron { color: var(--text2); font-size: 11px; transition: transform 0.2s; flex-shrink: 0; }
+    .phrase-card.open .chevron { transform: rotate(180deg); }
+    .phrase-detail {
+      display: none; border-top: 1px solid var(--border);
+      background: var(--bg2); padding: 4px 14px 10px;
+    }
+    .phrase-card.open .phrase-detail { display: block; }
+    .lang-row {
+      display: flex; align-items: baseline; gap: 10px;
+      padding: 7px 0; border-bottom: 1px solid var(--border);
+    }
+    .lang-row:last-child { border-bottom: none; }
+    .lc {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--text2); min-width: 22px;
+    }
+    .lp { font-size: 15px; color: var(--text); flex: 1; }
+    .p-star {
+      background: none; border: none; font-size: 18px; cursor: pointer;
+      padding: 4px 0; color: var(--text2); touch-action: manipulation; flex-shrink: 0;
+    }
+    .p-star.on { color: var(--accent); }
+
+    /* ── FAVORITES TAB ── */
+    .fav-wrap {
+      flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain; padding: 14px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .empty {
+      text-align: center; padding: 60px 30px; color: var(--text2);
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.6; }
+    .empty h3 { font-family: 'Playfair Display', serif; font-size: 18px; margin-bottom: 8px; color: var(--text); }
+    .empty p { font-size: 14px; line-height: 1.7; }
+    .fav-card {
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 12px; padding: 12px 14px;
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+    .fav-content { flex: 1; }
+    .fav-en { font-size: 14px; color: var(--text2); margin-bottom: 4px; }
+    .fav-translated { font-family: 'Playfair Display', serif; font-style: italic; font-size: 17px; color: var(--text); }
+    .fav-meta { font-size: 11px; color: var(--text2); margin-top: 4px; }
+    .fav-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+    .fav-copy-btn, .fav-del-btn {
+      background: none; border: none; font-size: 17px; cursor: pointer; padding: 3px;
+      touch-action: manipulation;
+    }
+
+    /* ── BOTTOM NAV ── */
+    .bottom-nav {
+      background: var(--tab-bg); display: flex;
+      padding-bottom: var(--safe-b);
+      border-top: 1px solid rgba(255,255,255,0.07);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+      padding: 10px 0 8px; cursor: pointer; background: none; border: none;
+      color: rgba(255,255,255,0.38); font-family: 'Nunito', sans-serif;
+      touch-action: manipulation;
+    }
+    .nav-btn.on { color: var(--tab-active); }
+    .nav-icon { font-size: 20px; }
+    .nav-lbl { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; }
+
+    /* ── MODALS ── */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(2px);
+      z-index: 100; display: none; align-items: flex-end; justify-content: center;
+    }
+    .overlay.show { display: flex; }
+    .sheet {
+      background: var(--surface); border-radius: 20px 20px 0 0;
+      width: 100%; max-width: 500px;
+      padding-bottom: calc(16px + var(--safe-b));
+    }
+    .sheet-handle {
+      width: 36px; height: 4px; background: var(--border);
+      border-radius: 2px; margin: 12px auto 0;
+    }
+    .sheet-title {
+      font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700;
+      text-align: center; padding: 14px 20px 14px;
+      border-bottom: 1px solid var(--border); color: var(--text);
+    }
+    .pick-opt {
+      display: flex; align-items: center; gap: 14px;
+      padding: 16px 22px; border-bottom: 1px solid var(--border);
+      cursor: pointer; touch-action: manipulation;
+    }
+    .pick-opt:last-child { border-bottom: none; }
+    .pick-opt:active { background: var(--bg2); }
+    .pick-flag { font-size: 26px; }
+    .pick-info { flex: 1; }
+    .pick-name { font-size: 16px; font-weight: 700; color: var(--text); }
+    .pick-sub { font-size: 13px; color: var(--text2); }
+    .pick-check { font-size: 18px; color: var(--accent); }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: calc(80px + var(--safe-b));
+      left: 50%; transform: translateX(-50%) translateY(12px);
+      background: var(--tab-bg); color: #f0e0c8;
+      padding: 10px 20px; border-radius: 22px;
+      font-size: 13px; font-weight: 700;
+      opacity: 0; transition: all 0.22s;
+      pointer-events: none; z-index: 300; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── ERROR ── */
+    .error-msg {
+      font-size: 14px; color: #c04040; font-style: italic;
+      padding: 8px 14px 10px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="logo">Euro <span>Fling</span></div>
+  <div class="offline-pill" id="offlinePill">✈ Offline Mode</div>
+</header>
+
+<!-- Language Bar -->
+<div class="lang-bar">
+  <button class="lang-btn" id="fromBtn" onclick="openPicker('from')">
+    <span class="lang-flag" id="fromFlag">🇺🇸</span>
+    <span id="fromName">English</span>
+  </button>
+  <button class="swap-btn" onclick="swapLangs()">⇄</button>
+  <button class="lang-btn" id="toBtn" onclick="openPicker('to')">
+    <span class="lang-flag" id="toFlag">🇫🇷</span>
+    <span id="toName">Français</span>
+  </button>
+</div>
+
+<!-- Main Content -->
+<div class="content-area">
+
+  <!-- TRANSLATE -->
+  <div class="tab-panel active" id="panel-translate">
+    <div class="translate-wrap">
+      <div class="card">
+        <div class="card-label" id="inputLbl">English</div>
+        <textarea class="input-text" id="inputText" placeholder="Type something to translate…" rows="4" oninput="scheduleTranslate()"></textarea>
+        <div class="card-footer">
+          <button class="icon-btn" onclick="clearAll()" title="Clear">✕</button>
+          <button class="icon-btn" onclick="startVoice()" id="micBtn" title="Voice input">🎙</button>
+          <span class="spacer"></span>
+          <button class="translate-btn" onclick="doTranslate()">Translate →</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label" id="outputLbl">Français</div>
+        <div class="dots" id="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        <div class="output-text" id="outputText"><span class="output-placeholder">Translation appears here</span></div>
+        <div class="match-note" id="matchNote" style="display:none"></div>
+        <div class="error-msg" id="errorMsg" style="display:none"></div>
+        <div class="card-footer">
+          <div class="output-actions">
+            <button class="act-btn" id="copyBtn" onclick="copyOutput()">📋 Copy</button>
+            <button class="act-btn" id="savBtn" onclick="saveToFavs()">☆ Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHRASEBOOK -->
+  <div class="tab-panel" id="panel-phrasebook">
+    <div class="cat-bar" id="catBar"></div>
+    <div class="phrase-list" id="phraseList"></div>
+  </div>
+
+  <!-- FAVORITES -->
+  <div class="tab-panel" id="panel-favorites">
+    <div class="fav-wrap" id="favList"></div>
+  </div>
+
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <button class="nav-btn on" id="nav-translate" onclick="switchTab('translate')">
+    <span class="nav-icon">💬</span><span class="nav-lbl">Translate</span>
+  </button>
+  <button class="nav-btn" id="nav-phrasebook" onclick="switchTab('phrasebook')">
+    <span class="nav-icon">📖</span><span class="nav-lbl">Phrasebook</span>
+  </button>
+  <button class="nav-btn" id="nav-favorites" onclick="switchTab('favorites')">
+    <span class="nav-icon">⭐</span><span class="nav-lbl">Favorites</span>
+  </button>
+</nav>
+
+<!-- Language Picker Modal -->
+<div class="overlay" id="pickerOverlay" onclick="maybeCloseOverlay(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="pickerTitle">Select Language</div>
+    <div id="pickerOptions"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// LANGUAGE CONFIG
+// ═══════════════════════════════════════════
+const LANGS = {
+  en: { name: 'English',  flag: '🇺🇸', note: 'American English' },
+  fr: { name: 'Français', flag: '🇫🇷', note: 'Parisian French' },
+  de: { name: 'Deutsch',  flag: '🇦🇹', note: 'Austrian / Swiss German' }
+};
+
+let fromLang = 'en';
+let toLang   = 'fr';
+let pickerTarget = 'to';
+let translateTimer = null;
+let currentOutput = '';
+let currentInput = '';
+let isOnline = navigator.onLine;
+
+// ═══════════════════════════════════════════
+// PHRASEBOOK DATA (embedded for offline use)
+// ═══════════════════════════════════════════
+const PHRASEBOOK = [
+  // ── GREETINGS ──
+  {en:"Hello!",fr:"Bonjour !",de:"Grüß Gott!",cat:"greetings",tags:["hello","greeting"]},
+  {en:"Hi! (casual)",fr:"Salut !",de:"Servus!",cat:"greetings",tags:["hi","informal"]},
+  {en:"Good morning!",fr:"Bonjour !",de:"Guten Morgen!",cat:"greetings",tags:["morning"]},
+  {en:"Good evening!",fr:"Bonsoir !",de:"Guten Abend!",cat:"greetings",tags:["evening"]},
+  {en:"Good night!",fr:"Bonne nuit !",de:"Gute Nacht!",cat:"greetings",tags:["night"]},
+  {en:"Goodbye!",fr:"Au revoir !",de:"Auf Wiedersehen!",cat:"greetings",tags:["bye"]},
+  {en:"See you later!",fr:"À plus tard !",de:"Bis später!",cat:"greetings",tags:["bye","casual"]},
+  {en:"See you tomorrow!",fr:"À demain !",de:"Bis morgen!",cat:"greetings",tags:["bye"]},
+  {en:"Have a good day!",fr:"Bonne journée !",de:"Einen schönen Tag!",cat:"greetings",tags:["wishes"]},
+  {en:"Have a good weekend!",fr:"Bon week-end !",de:"Schönes Wochenende!",cat:"greetings",tags:["weekend","wishes"]},
+  {en:"How are you? (formal)",fr:"Comment allez-vous ?",de:"Wie geht es Ihnen?",cat:"greetings",tags:["wellbeing","formal"]},
+  {en:"How are you? (casual)",fr:"Ça va ?",de:"Wie geht's?",cat:"greetings",tags:["wellbeing","casual"]},
+  {en:"I'm doing well, thanks!",fr:"Ça va bien, merci !",de:"Gut, danke!",cat:"greetings",tags:["response"]},
+  {en:"Not bad!",fr:"Pas mal !",de:"Nicht schlecht!",cat:"greetings",tags:["response"]},
+  {en:"Nice to meet you!",fr:"Enchanté(e) !",de:"Freut mich!",cat:"greetings",tags:["introduction"]},
+  {en:"What's your name?",fr:"Comment vous appelez-vous ?",de:"Wie heißen Sie?",cat:"greetings",tags:["name","intro"]},
+  {en:"My name is...",fr:"Je m'appelle...",de:"Ich heiße...",cat:"greetings",tags:["name","intro"]},
+  {en:"Welcome!",fr:"Bienvenue !",de:"Willkommen!",cat:"greetings",tags:["welcome"]},
+  {en:"Take care!",fr:"Prenez soin de vous !",de:"Pass auf dich auf!",cat:"greetings",tags:["farewell","casual"]},
+
+  // ── RESTAURANT & CAFÉ ──
+  {en:"A table for two, please.",fr:"Une table pour deux, s'il vous plaît.",de:"Einen Tisch für zwei, bitte.",cat:"restaurant",tags:["seating"]},
+  {en:"Do you have a table available?",fr:"Vous avez une table de libre ?",de:"Haben Sie noch einen Tisch frei?",cat:"restaurant",tags:["seating"]},
+  {en:"Can I see the menu?",fr:"La carte, s'il vous plaît.",de:"Die Speisekarte, bitte.",cat:"restaurant",tags:["menu"]},
+  {en:"What do you recommend?",fr:"Qu'est-ce que vous me conseillez ?",de:"Was empfehlen Sie?",cat:"restaurant",tags:["recommendation"]},
+  {en:"I'll have this.",fr:"Je vais prendre ça.",de:"Ich nehme das hier.",cat:"restaurant",tags:["ordering"]},
+  {en:"I'd like...",fr:"Je voudrais...",de:"Ich hätte gerne...",cat:"restaurant",tags:["ordering"]},
+  {en:"What's today's special?",fr:"Quel est le plat du jour ?",de:"Was ist das Tagesmenü?",cat:"restaurant",tags:["menu","special"]},
+  {en:"Can I get the check, please?",fr:"L'addition, s'il vous plaît.",de:"Die Rechnung, bitte.",cat:"restaurant",tags:["payment"]},
+  {en:"Can we split the bill?",fr:"On peut payer séparément ?",de:"Können wir getrennt zahlen?",cat:"restaurant",tags:["payment","split"]},
+  {en:"Is service included?",fr:"Le service est compris ?",de:"Ist die Bedienung inbegriffen?",cat:"restaurant",tags:["tip","service"]},
+  {en:"I'll pay by card.",fr:"Je paie par carte.",de:"Ich zahle mit Karte.",cat:"restaurant",tags:["payment","card"]},
+  {en:"Do you accept cash?",fr:"Vous acceptez les espèces ?",de:"Nehmen Sie Bargeld?",cat:"restaurant",tags:["payment","cash"]},
+  {en:"This is delicious!",fr:"C'est vraiment bon !",de:"Das ist köstlich!",cat:"restaurant",tags:["compliment"]},
+  {en:"A glass of water, please.",fr:"Un verre d'eau, s'il vous plaît.",de:"Ein Glas Wasser, bitte.",cat:"restaurant",tags:["drinks","water"]},
+  {en:"Sparkling or still water?",fr:"Avec ou sans gaz ?",de:"Mit oder ohne Kohlensäure?",cat:"restaurant",tags:["drinks","water"]},
+  {en:"A coffee, please.",fr:"Un café, s'il vous plaît.",de:"Einen Kaffee, bitte.",cat:"restaurant",tags:["drinks","coffee"]},
+  {en:"A glass of wine, please.",fr:"Un verre de vin, s'il vous plaît.",de:"Ein Glas Wein, bitte.",cat:"restaurant",tags:["drinks","wine"]},
+  {en:"Another round, please.",fr:"La même chose, s'il vous plaît.",de:"Noch einmal dasselbe, bitte.",cat:"restaurant",tags:["drinks","ordering"]},
+  {en:"Excuse me! (to get attention)",fr:"Excusez-moi !",de:"Entschuldigung!",cat:"restaurant",tags:["waiter","attention"]},
+  {en:"Enjoy your meal!",fr:"Bon appétit !",de:"Guten Appetit!",cat:"restaurant",tags:["dining","wishes"]},
+  {en:"I'm allergic to nuts.",fr:"Je suis allergique aux noix.",de:"Ich bin allergisch gegen Nüsse.",cat:"restaurant",tags:["allergy"]},
+  {en:"I'm allergic to shellfish.",fr:"Je suis allergique aux fruits de mer.",de:"Ich bin allergisch gegen Meeresfrüchte.",cat:"restaurant",tags:["allergy"]},
+  {en:"I'm vegetarian.",fr:"Je suis végétarien(ne).",de:"Ich bin Vegetarier.",cat:"restaurant",tags:["dietary"]},
+  {en:"I'm vegan.",fr:"Je suis vegan.",de:"Ich bin Veganer.",cat:"restaurant",tags:["dietary"]},
+  {en:"No gluten, please.",fr:"Sans gluten, s'il vous plaît.",de:"Ohne Gluten, bitte.",cat:"restaurant",tags:["dietary","gluten"]},
+  {en:"Without sauce, please.",fr:"Sans sauce, s'il vous plaît.",de:"Ohne Soße, bitte.",cat:"restaurant",tags:["ordering"]},
+  {en:"Is this spicy?",fr:"C'est épicé ?",de:"Ist das scharf?",cat:"restaurant",tags:["food","spicy"]},
+  {en:"Can I have more bread?",fr:"On peut avoir encore du pain ?",de:"Können wir noch Brot bekommen?",cat:"restaurant",tags:["bread"]},
+  {en:"Can I take this to go?",fr:"C'est possible à emporter ?",de:"Kann ich das mitnehmen?",cat:"restaurant",tags:["takeaway"]},
+  {en:"I'd like to make a reservation.",fr:"Je voudrais réserver une table.",de:"Ich möchte einen Tisch reservieren.",cat:"restaurant",tags:["reservation"]},
+  {en:"Do you have a children's menu?",fr:"Vous avez un menu enfant ?",de:"Haben Sie eine Kinderkarte?",cat:"restaurant",tags:["children"]},
+  {en:"Can I have a receipt?",fr:"Est-ce que je peux avoir un reçu ?",de:"Kann ich einen Beleg bekommen?",cat:"restaurant",tags:["receipt"]},
+
+  // ── TRANSPORTATION ──
+  {en:"Where is the train station?",fr:"Où est la gare ?",de:"Wo ist der Bahnhof?",cat:"transportation",tags:["train","directions"]},
+  {en:"A ticket to..., please.",fr:"Un billet pour..., s'il vous plaît.",de:"Eine Fahrkarte nach..., bitte.",cat:"transportation",tags:["ticket"]},
+  {en:"A round trip to...",fr:"Un aller-retour pour...",de:"Eine Hin- und Rückfahrt nach...",cat:"transportation",tags:["ticket","roundtrip"]},
+  {en:"One way, please.",fr:"Aller simple, s'il vous plaît.",de:"Einfache Fahrt, bitte.",cat:"transportation",tags:["ticket","oneway"]},
+  {en:"What time does the next train leave?",fr:"À quelle heure part le prochain train ?",de:"Wann fährt der nächste Zug ab?",cat:"transportation",tags:["train","schedule"]},
+  {en:"Which platform?",fr:"Quelle voie ?",de:"Welches Gleis?",cat:"transportation",tags:["train","platform"]},
+  {en:"Is this seat taken?",fr:"Cette place est prise ?",de:"Ist dieser Platz besetzt?",cat:"transportation",tags:["seat"]},
+  {en:"Is the train on time?",fr:"Le train est à l'heure ?",de:"Ist der Zug pünktlich?",cat:"transportation",tags:["train","schedule"]},
+  {en:"I missed my train.",fr:"J'ai raté mon train.",de:"Ich habe meinen Zug verpasst.",cat:"transportation",tags:["train","problem"]},
+  {en:"I need to change trains.",fr:"Je dois changer de train.",de:"Ich muss umsteigen.",cat:"transportation",tags:["train","transfer"]},
+  {en:"Is there a direct train?",fr:"Il y a un train direct ?",de:"Gibt es einen Direktzug?",cat:"transportation",tags:["train"]},
+  {en:"Does this stop at...?",fr:"Est-ce que ça s'arrête à... ?",de:"Hält das in...?",cat:"transportation",tags:["stop"]},
+  {en:"Where is the subway / metro?",fr:"Où est le métro ?",de:"Wo ist die U-Bahn?",cat:"transportation",tags:["metro","directions"]},
+  {en:"Where does this bus go?",fr:"Ce bus va où ?",de:"Wohin fährt dieser Bus?",cat:"transportation",tags:["bus"]},
+  {en:"How many stops to...?",fr:"Il y a combien d'arrêts jusqu'à... ?",de:"Wie viele Stationen sind es bis...?",cat:"transportation",tags:["bus","metro","stops"]},
+  {en:"Can you call me a taxi?",fr:"Vous pouvez m'appeler un taxi ?",de:"Können Sie mir ein Taxi rufen?",cat:"transportation",tags:["taxi"]},
+  {en:"Take me to this address.",fr:"Amenez-moi à cette adresse, s'il vous plaît.",de:"Fahren Sie mich bitte zu dieser Adresse.",cat:"transportation",tags:["taxi"]},
+  {en:"How much to the city center?",fr:"C'est combien jusqu'au centre-ville ?",de:"Was kostet es bis ins Zentrum?",cat:"transportation",tags:["taxi","price"]},
+  {en:"Stop here, please.",fr:"Arrêtez-vous ici, s'il vous plaît.",de:"Halten Sie bitte hier an.",cat:"transportation",tags:["taxi","stop"]},
+  {en:"Where can I rent a bike?",fr:"Où est-ce qu'on peut louer un vélo ?",de:"Wo kann ich ein Fahrrad ausleihen?",cat:"transportation",tags:["bike"]},
+  {en:"I'd like to rent a car.",fr:"Je voudrais louer une voiture.",de:"Ich möchte ein Auto mieten.",cat:"transportation",tags:["car","rental"]},
+  {en:"Where can I park?",fr:"Où est-ce qu'on peut se garer ?",de:"Wo kann ich parken?",cat:"transportation",tags:["car","parking"]},
+
+  // ── HOTEL ──
+  {en:"I have a reservation.",fr:"J'ai une réservation.",de:"Ich habe eine Reservierung.",cat:"hotel",tags:["checkin"]},
+  {en:"I'd like to check in.",fr:"Je voudrais m'enregistrer.",de:"Ich möchte einchecken.",cat:"hotel",tags:["checkin"]},
+  {en:"What time is check-out?",fr:"C'est quand le check-out ?",de:"Wann ist der Check-out?",cat:"hotel",tags:["checkout"]},
+  {en:"Can I leave my bags here?",fr:"Je peux laisser mes bagages ici ?",de:"Kann ich mein Gepäck hier lassen?",cat:"hotel",tags:["bags"]},
+  {en:"Is breakfast included?",fr:"Le petit-déjeuner est inclus ?",de:"Ist das Frühstück inbegriffen?",cat:"hotel",tags:["breakfast"]},
+  {en:"Could I have a room with a view?",fr:"Est-ce que je peux avoir une chambre avec vue ?",de:"Könnte ich ein Zimmer mit Aussicht haben?",cat:"hotel",tags:["room"]},
+  {en:"The room is too noisy.",fr:"La chambre est trop bruyante.",de:"Das Zimmer ist zu laut.",cat:"hotel",tags:["complaint","noise"]},
+  {en:"The air conditioning doesn't work.",fr:"La climatisation ne fonctionne pas.",de:"Die Klimaanlage funktioniert nicht.",cat:"hotel",tags:["problem"]},
+  {en:"Can I get more towels?",fr:"Est-ce que je peux avoir des serviettes supplémentaires ?",de:"Kann ich mehr Handtücher bekommen?",cat:"hotel",tags:["towels"]},
+  {en:"What's the Wi-Fi password?",fr:"C'est quoi le mot de passe Wi-Fi ?",de:"Was ist das WLAN-Passwort?",cat:"hotel",tags:["wifi"]},
+  {en:"Can I extend my stay?",fr:"Je peux prolonger mon séjour ?",de:"Kann ich meinen Aufenthalt verlängern?",cat:"hotel",tags:["stay"]},
+  {en:"I'd like a wake-up call at 7.",fr:"Je voudrais un réveil à 7 heures.",de:"Ich hätte gerne einen Weckruf um 7 Uhr.",cat:"hotel",tags:["wakeup"]},
+  {en:"Where is the elevator?",fr:"Où est l'ascenseur ?",de:"Wo ist der Aufzug?",cat:"hotel",tags:["directions"]},
+  {en:"My key doesn't work.",fr:"Ma clé ne fonctionne pas.",de:"Mein Schlüssel funktioniert nicht.",cat:"hotel",tags:["key","problem"]},
+  {en:"Is there a safe in the room?",fr:"Il y a un coffre-fort dans la chambre ?",de:"Gibt es einen Safe im Zimmer?",cat:"hotel",tags:["safe"]},
+  {en:"Can I have a late checkout?",fr:"C'est possible de rester un peu plus longtemps ?",de:"Kann ich später auschecken?",cat:"hotel",tags:["checkout","late"]},
+  {en:"Can you recommend a good restaurant nearby?",fr:"Vous pouvez me recommander un bon resto dans le coin ?",de:"Können Sie mir ein gutes Restaurant in der Nähe empfehlen?",cat:"hotel",tags:["recommendation"]},
+  {en:"Where is the nearest ATM?",fr:"Où est le distributeur le plus proche ?",de:"Wo ist der nächste Geldautomat?",cat:"hotel",tags:["atm","money"]},
+
+  // ── SHOPPING ──
+  {en:"How much does this cost?",fr:"Ça coûte combien ?",de:"Was kostet das?",cat:"shopping",tags:["price"]},
+  {en:"That's too expensive.",fr:"C'est trop cher.",de:"Das ist zu teuer.",cat:"shopping",tags:["price","expensive"]},
+  {en:"Can you give me a discount?",fr:"Vous pouvez me faire un prix ?",de:"Können Sie mir einen Rabatt geben?",cat:"shopping",tags:["discount"]},
+  {en:"Do you have it in a different size?",fr:"Vous l'avez dans une autre taille ?",de:"Haben Sie das in einer anderen Größe?",cat:"shopping",tags:["size","clothing"]},
+  {en:"Can I try this on?",fr:"Je peux l'essayer ?",de:"Kann ich das anprobieren?",cat:"shopping",tags:["fitting"]},
+  {en:"Where are the fitting rooms?",fr:"Où sont les cabines d'essayage ?",de:"Wo sind die Umkleidekabinen?",cat:"shopping",tags:["fitting"]},
+  {en:"I'm just browsing, thanks.",fr:"Je regarde juste, merci.",de:"Ich schaue mich nur um, danke.",cat:"shopping",tags:["browsing"]},
+  {en:"I'll take it.",fr:"Je le prends.",de:"Ich nehme es.",cat:"shopping",tags:["purchase"]},
+  {en:"Do you have this in black?",fr:"Vous l'avez en noir ?",de:"Haben Sie das in Schwarz?",cat:"shopping",tags:["color"]},
+  {en:"Is this on sale?",fr:"C'est en solde ?",de:"Ist das im Angebot?",cat:"shopping",tags:["sale"]},
+  {en:"Can I return this?",fr:"Je peux rendre ça ?",de:"Kann ich das zurückgeben?",cat:"shopping",tags:["return"]},
+  {en:"Where is the pharmacy?",fr:"Où est la pharmacie ?",de:"Wo ist die Apotheke?",cat:"shopping",tags:["pharmacy"]},
+  {en:"Where is the supermarket?",fr:"Où est le supermarché ?",de:"Wo ist der Supermarkt?",cat:"shopping",tags:["supermarket"]},
+  {en:"A bag, please.",fr:"Un sac, s'il vous plaît.",de:"Eine Tüte, bitte.",cat:"shopping",tags:["bag"]},
+
+  // ── EMERGENCY & HEALTH ──
+  {en:"Help!",fr:"Au secours !",de:"Hilfe!",cat:"emergency",tags:["urgent"]},
+  {en:"Call the police!",fr:"Appelez la police !",de:"Rufen Sie die Polizei!",cat:"emergency",tags:["police","urgent"]},
+  {en:"Call an ambulance!",fr:"Appelez une ambulance !",de:"Rufen Sie einen Krankenwagen!",cat:"emergency",tags:["ambulance","urgent"]},
+  {en:"I need a doctor.",fr:"J'ai besoin d'un médecin.",de:"Ich brauche einen Arzt.",cat:"emergency",tags:["doctor"]},
+  {en:"Is there a hospital nearby?",fr:"Il y a un hôpital près d'ici ?",de:"Gibt es ein Krankenhaus in der Nähe?",cat:"emergency",tags:["hospital"]},
+  {en:"I've been robbed.",fr:"On m'a volé.",de:"Ich wurde bestohlen.",cat:"emergency",tags:["theft","police"]},
+  {en:"I've lost my passport.",fr:"J'ai perdu mon passeport.",de:"Ich habe meinen Reisepass verloren.",cat:"emergency",tags:["passport","lost"]},
+  {en:"I've lost my wallet.",fr:"J'ai perdu mon portefeuille.",de:"Ich habe meine Brieftasche verloren.",cat:"emergency",tags:["wallet","lost"]},
+  {en:"I feel sick.",fr:"Je ne me sens pas bien.",de:"Mir ist nicht gut.",cat:"emergency",tags:["sick"]},
+  {en:"I have a headache.",fr:"J'ai mal à la tête.",de:"Ich habe Kopfschmerzen.",cat:"emergency",tags:["headache"]},
+  {en:"I have a stomachache.",fr:"J'ai mal au ventre.",de:"Ich habe Bauchschmerzen.",cat:"emergency",tags:["stomach"]},
+  {en:"I'm allergic to penicillin.",fr:"Je suis allergique à la pénicilline.",de:"Ich bin allergisch gegen Penicillin.",cat:"emergency",tags:["allergy","medical"]},
+  {en:"I need medication.",fr:"J'ai besoin de médicaments.",de:"Ich brauche Medikamente.",cat:"emergency",tags:["medication"]},
+  {en:"I'm lost.",fr:"Je suis perdu(e).",de:"Ich habe mich verlaufen.",cat:"emergency",tags:["lost"]},
+  {en:"Fire!",fr:"Au feu !",de:"Feuer!",cat:"emergency",tags:["fire","urgent"]},
+  {en:"Where is the nearest embassy?",fr:"Où est l'ambassade la plus proche ?",de:"Wo ist die nächste Botschaft?",cat:"emergency",tags:["embassy"]},
+  {en:"I have travel insurance.",fr:"J'ai une assurance voyage.",de:"Ich habe eine Reiseversicherung.",cat:"emergency",tags:["insurance"]},
+
+  // ── AIRPORT ──
+  {en:"Where is check-in?",fr:"Où est l'enregistrement ?",de:"Wo ist der Check-in?",cat:"airport",tags:["checkin"]},
+  {en:"Where is gate...?",fr:"Où est la porte... ?",de:"Wo ist Gate...?",cat:"airport",tags:["gate"]},
+  {en:"Is the flight on time?",fr:"Le vol est à l'heure ?",de:"Ist der Flug pünktlich?",cat:"airport",tags:["flight","schedule"]},
+  {en:"My flight has been delayed.",fr:"Mon vol a du retard.",de:"Mein Flug hat Verspätung.",cat:"airport",tags:["delay"]},
+  {en:"Where is the baggage claim?",fr:"Où récupère-t-on les bagages ?",de:"Wo ist die Gepäckausgabe?",cat:"airport",tags:["baggage"]},
+  {en:"My bag is missing.",fr:"Mon bagage a disparu.",de:"Mein Gepäck fehlt.",cat:"airport",tags:["baggage","lost"]},
+  {en:"I have nothing to declare.",fr:"Je n'ai rien à déclarer.",de:"Ich habe nichts zu verzollen.",cat:"airport",tags:["customs"]},
+  {en:"Where is the taxi stand?",fr:"Où est la station de taxi ?",de:"Wo ist der Taxistand?",cat:"airport",tags:["taxi"]},
+  {en:"Is there a shuttle to the city?",fr:"Il y a une navette pour le centre-ville ?",de:"Gibt es einen Shuttle ins Zentrum?",cat:"airport",tags:["shuttle"]},
+  {en:"Where can I exchange money?",fr:"Où est-ce que je peux changer de l'argent ?",de:"Wo kann ich Geld wechseln?",cat:"airport",tags:["money","exchange"]},
+  {en:"Window seat, please.",fr:"Côté fenêtre, s'il vous plaît.",de:"Einen Fensterplatz, bitte.",cat:"airport",tags:["seat"]},
+  {en:"Aisle seat, please.",fr:"Côté couloir, s'il vous plaît.",de:"Einen Gangplatz, bitte.",cat:"airport",tags:["seat"]},
+  {en:"I need to board now.",fr:"Je dois embarquer maintenant.",de:"Ich muss jetzt einsteigen.",cat:"airport",tags:["boarding"]},
+  {en:"Can I bring this as carry-on?",fr:"Je peux prendre ça en cabine ?",de:"Kann ich das als Handgepäck mitnehmen?",cat:"airport",tags:["baggage","cabin"]},
+
+  // ── DIRECTIONS & HELP ──
+  {en:"Excuse me, can you help me?",fr:"Excusez-moi, vous pouvez m'aider ?",de:"Entschuldigung, können Sie mir helfen?",cat:"directions",tags:["help"]},
+  {en:"Where is...?",fr:"Où est... ?",de:"Wo ist...?",cat:"directions",tags:["directions"]},
+  {en:"How do I get to...?",fr:"Comment on fait pour aller à... ?",de:"Wie komme ich nach...?",cat:"directions",tags:["directions"]},
+  {en:"How far is it?",fr:"C'est loin ?",de:"Wie weit ist es?",cat:"directions",tags:["distance"]},
+  {en:"Is it within walking distance?",fr:"On peut y aller à pied ?",de:"Kann man das zu Fuß erreichen?",cat:"directions",tags:["walking"]},
+  {en:"Turn left.",fr:"Tournez à gauche.",de:"Biegen Sie links ab.",cat:"directions",tags:["left"]},
+  {en:"Turn right.",fr:"Tournez à droite.",de:"Biegen Sie rechts ab.",cat:"directions",tags:["right"]},
+  {en:"Go straight ahead.",fr:"Allez tout droit.",de:"Gehen Sie geradeaus.",cat:"directions",tags:["straight"]},
+  {en:"It's on the left.",fr:"C'est à gauche.",de:"Es ist auf der linken Seite.",cat:"directions",tags:["left"]},
+  {en:"It's on the right.",fr:"C'est à droite.",de:"Es ist auf der rechten Seite.",cat:"directions",tags:["right"]},
+  {en:"Do you have a map?",fr:"Vous avez un plan ?",de:"Haben Sie einen Stadtplan?",cat:"directions",tags:["map"]},
+  {en:"Is this the right way to...?",fr:"C'est bien le chemin pour... ?",de:"Ist das der richtige Weg nach...?",cat:"directions",tags:["confirm"]},
+  {en:"Thank you very much.",fr:"Merci beaucoup.",de:"Danke vielmals.",cat:"directions",tags:["thanks"]},
+  {en:"You're welcome.",fr:"De rien.",de:"Bitte sehr.",cat:"directions",tags:["response"]},
+  {en:"Please.",fr:"S'il vous plaît.",de:"Bitte.",cat:"directions",tags:["polite"]},
+  {en:"Sorry / Excuse me.",fr:"Pardon.",de:"Entschuldigung.",cat:"directions",tags:["apology"]},
+  {en:"Just a moment, please.",fr:"Un instant, s'il vous plaît.",de:"Einen Moment, bitte.",cat:"directions",tags:["wait"]},
+  {en:"Can you write it down?",fr:"Vous pouvez l'écrire ?",de:"Können Sie das aufschreiben?",cat:"directions",tags:["writing"]},
+
+  // ── SMALL TALK & SOCIAL ──
+  {en:"Where are you from?",fr:"Vous venez d'où ?",de:"Woher kommen Sie?",cat:"smalltalk",tags:["origin"]},
+  {en:"I'm American.",fr:"Je suis américain(e).",de:"Ich bin Amerikaner(in).",cat:"smalltalk",tags:["nationality"]},
+  {en:"I'm visiting for a week.",fr:"Je suis là pour une semaine.",de:"Ich bin für eine Woche hier.",cat:"smalltalk",tags:["travel"]},
+  {en:"It's my first time here.",fr:"C'est ma première fois ici.",de:"Es ist mein erstes Mal hier.",cat:"smalltalk",tags:["first time"]},
+  {en:"I love it here!",fr:"J'adore cet endroit !",de:"Es gefällt mir hier sehr!",cat:"smalltalk",tags:["positive"]},
+  {en:"The weather is beautiful today.",fr:"Il fait vraiment beau aujourd'hui.",de:"Das Wetter ist heute herrlich.",cat:"smalltalk",tags:["weather"]},
+  {en:"Do you speak English?",fr:"Vous parlez anglais ?",de:"Sprechen Sie Englisch?",cat:"smalltalk",tags:["language"]},
+  {en:"I don't speak French very well.",fr:"Je ne parle pas très bien français.",de:"Ich spreche nicht sehr gut Französisch.",cat:"smalltalk",tags:["language"]},
+  {en:"I don't speak German very well.",fr:"Je ne parle pas très bien allemand.",de:"Ich spreche nicht sehr gut Deutsch.",cat:"smalltalk",tags:["language"]},
+  {en:"Sorry, I don't understand.",fr:"Désolé(e), je ne comprends pas.",de:"Entschuldigung, ich verstehe das nicht.",cat:"smalltalk",tags:["language"]},
+  {en:"Can you say that again, slowly?",fr:"Vous pouvez répéter ça lentement ?",de:"Können Sie das bitte langsam wiederholen?",cat:"smalltalk",tags:["repeat"]},
+  {en:"That's very kind of you.",fr:"C'est très gentil de votre part.",de:"Das ist sehr nett von Ihnen.",cat:"smalltalk",tags:["thanks"]},
+  {en:"I'm here on holiday.",fr:"Je suis en vacances.",de:"Ich bin im Urlaub.",cat:"smalltalk",tags:["holiday"]},
+  {en:"What do you recommend visiting?",fr:"Qu'est-ce que vous conseilleriez de visiter ?",de:"Was empfehlen Sie zu besuchen?",cat:"smalltalk",tags:["recommendation"]},
+  {en:"That's interesting!",fr:"C'est intéressant !",de:"Das ist interessant!",cat:"smalltalk",tags:["reaction"]},
+  {en:"Of course!",fr:"Bien sûr !",de:"Natürlich!",cat:"smalltalk",tags:["affirm"]},
+  {en:"No problem.",fr:"Pas de problème.",de:"Kein Problem.",cat:"smalltalk",tags:["reassure"]},
+  {en:"Don't worry about it.",fr:"Ne vous en faites pas.",de:"Machen Sie sich keine Sorgen.",cat:"smalltalk",tags:["reassure"]},
+  {en:"Maybe.",fr:"Peut-être.",de:"Vielleicht.",cat:"smalltalk",tags:["uncertain"]},
+  {en:"Not really.",fr:"Pas vraiment.",de:"Nicht wirklich.",cat:"smalltalk",tags:["disagree"]},
+  {en:"I agree.",fr:"Tout à fait.",de:"Da stimme ich zu.",cat:"smalltalk",tags:["agree"]},
+  {en:"I don't know.",fr:"Je ne sais pas.",de:"Ich weiß es nicht.",cat:"smalltalk",tags:["unknown"]},
+  {en:"Can I take a photo here?",fr:"Je peux prendre une photo ici ?",de:"Darf ich hier ein Foto machen?",cat:"smalltalk",tags:["photo"]},
+  {en:"Could you take a photo of us?",fr:"Vous pourriez nous prendre en photo ?",de:"Könnten Sie uns fotografieren?",cat:"smalltalk",tags:["photo"]},
+
+  // ── USEFUL FILLER / NATIVE-SPEAKER PHRASES ──
+  {en:"So / As a result... (filler)",fr:"Du coup...",de:"Na ja...",cat:"smalltalk",tags:["filler","native"]},
+  {en:"Actually... / In fact...",fr:"En fait...",de:"Eigentlich...",cat:"smalltalk",tags:["filler","native"]},
+  {en:"That is to say...",fr:"C'est-à-dire...",de:"Das heißt...",cat:"smalltalk",tags:["filler","native"]},
+  {en:"Meh. / So-so.",fr:"Bof.",de:"Na ja.",cat:"smalltalk",tags:["filler","native"]},
+  {en:"There you go! / Voilà!",fr:"Voilà !",de:"Bitte schön!",cat:"smalltalk",tags:["filler","native"]},
+  {en:"That works! / Sounds good!",fr:"Ça marche !",de:"Passt!",cat:"smalltalk",tags:["filler","native"]},
+  {en:"Cool! / Nice!",fr:"Sympa !",de:"Schau!",cat:"smalltalk",tags:["filler","native"]},
+  {en:"Exactly! / That's right!",fr:"Exactement !",de:"Genau!",cat:"smalltalk",tags:["filler","native"]},
+  {en:"Oh I see! / Ah right!",fr:"Ah bon !",de:"Ach so!",cat:"smalltalk",tags:["filler","native"]},
+  {en:"Yes it is! (contradicting a negative)",fr:"Si, si !",de:"Doch!",cat:"smalltalk",tags:["filler","native"]},
+  {en:"Sure! Of course! (very casual)",fr:"Ouais, c'est clair !",de:"Na klar!",cat:"smalltalk",tags:["filler","native"]},
+  {en:"Let's see / We'll see.",fr:"On verra.",de:"Schauen wir mal.",cat:"smalltalk",tags:["filler","native"]},
+  {en:"It's fine / no worries.",fr:"C'est bon.",de:"Ist schon gut.",cat:"smalltalk",tags:["filler","native"]},
+  {en:"Honestly / Frankly...",fr:"Franchement...",de:"Ehrlich gesagt...",cat:"smalltalk",tags:["filler","native"]},
+  {en:"Like / You know... (casual filler)",fr:"Genre...",de:"Du, weißt du...",cat:"smalltalk",tags:["filler","native"]},
+
+  // ── SKI & ALPS ──
+  {en:"Where can I rent skis?",fr:"Où est-ce qu'on peut louer des skis ?",de:"Wo kann ich Ski leihen?",cat:"ski",tags:["rental","skis"]},
+  {en:"I need ski boots, size...",fr:"J'ai besoin de chaussures de ski, pointure...",de:"Ich brauche Skischuhe, Größe...",cat:"ski",tags:["rental","boots"]},
+  {en:"I need ski poles too.",fr:"J'ai besoin de bâtons aussi.",de:"Ich brauche auch Skistöcke.",cat:"ski",tags:["rental","poles"]},
+  {en:"Where do I buy a lift pass?",fr:"Où est-ce qu'on achète les forfaits ?",de:"Wo kaufe ich einen Skipass?",cat:"ski",tags:["lift pass"]},
+  {en:"A day pass, please.",fr:"Un forfait journée, s'il vous plaît.",de:"Einen Tagespass, bitte.",cat:"ski",tags:["lift pass"]},
+  {en:"A 6-day pass for the whole area.",fr:"Un forfait 6 jours pour tout le domaine.",de:"Einen 6-Tage-Pass für das ganze Gebiet.",cat:"ski",tags:["lift pass"]},
+  {en:"Which runs are open today?",fr:"Quelles pistes sont ouvertes aujourd'hui ?",de:"Welche Pisten sind heute offen?",cat:"ski",tags:["piste","open"]},
+  {en:"Is the off-piste safe today?",fr:"L'hors-piste est sûr aujourd'hui ?",de:"Ist das Gelände abseits der Piste heute sicher?",cat:"ski",tags:["off-piste","safety"]},
+  {en:"What's the snow report?",fr:"C'est quoi les conditions de neige ?",de:"Wie ist der Schneebericht?",cat:"ski",tags:["snow","conditions"]},
+  {en:"Fresh snow last night!",fr:"Il a neigé cette nuit !",de:"Heute Nacht hat es geschneit!",cat:"ski",tags:["snow"]},
+  {en:"The powder is incredible today.",fr:"La poudreuse est incroyable aujourd'hui.",de:"Der Tiefschnee ist heute fantastisch.",cat:"ski",tags:["powder","snow"]},
+  {en:"Is the gondola running?",fr:"La télécabine fonctionne ?",de:"Läuft die Gondelbahn?",cat:"ski",tags:["gondola","lift"]},
+  {en:"Which lift goes to the top?",fr:"Quel télésiège monte en haut ?",de:"Welcher Lift fährt ganz nach oben?",cat:"ski",tags:["lift"]},
+  {en:"How long is the queue?",fr:"Il y a combien d'attente ?",de:"Wie lang ist die Warteschlange?",cat:"ski",tags:["queue","lift"]},
+  {en:"What level is this run?",fr:"Ce tracé, c'est quel niveau ?",de:"Welches Niveau hat diese Piste?",cat:"ski",tags:["piste","level"]},
+  {en:"Is there a beginner slope nearby?",fr:"Il y a une piste débutant près d'ici ?",de:"Gibt es eine Anfängerpiste in der Nähe?",cat:"ski",tags:["beginner"]},
+  {en:"I'm an intermediate skier.",fr:"Je skie à un niveau intermédiaire.",de:"Ich bin ein fortgeschrittener Anfänger.",cat:"ski",tags:["level"]},
+  {en:"I'd like a ski lesson.",fr:"Je voudrais prendre un cours de ski.",de:"Ich möchte eine Skistunde nehmen.",cat:"ski",tags:["lesson"]},
+  {en:"Where is the ski school?",fr:"Où est l'école de ski ?",de:"Wo ist die Skischule?",cat:"ski",tags:["lesson","school"]},
+  {en:"I fell and hurt my knee.",fr:"Je suis tombé(e) et je me suis fait mal au genou.",de:"Ich bin gestürzt und habe mein Knie verletzt.",cat:"ski",tags:["injury","knee"]},
+  {en:"I need the ski patrol.",fr:"J'ai besoin des secours en montagne.",de:"Ich brauche den Pistendienst.",cat:"ski",tags:["patrol","emergency"]},
+  {en:"Can you call mountain rescue?",fr:"Vous pouvez appeler les secours en montagne ?",de:"Können Sie die Bergrettung anrufen?",cat:"ski",tags:["rescue","emergency"]},
+  {en:"Where is the first aid station?",fr:"Où est le poste de secours ?",de:"Wo ist die Erste-Hilfe-Station?",cat:"ski",tags:["first aid"]},
+  {en:"My ski binding is loose.",fr:"Ma fixation est mal réglée.",de:"Meine Skibindung ist locker.",cat:"ski",tags:["equipment","binding"]},
+  {en:"Can you tune my skis?",fr:"Vous pouvez m'affûter les skis ?",de:"Können Sie meine Ski präparieren?",cat:"ski",tags:["equipment","tune"]},
+  {en:"The visibility is bad.",fr:"La visibilité est mauvaise.",de:"Die Sicht ist schlecht.",cat:"ski",tags:["weather","visibility"]},
+  {en:"Is it going to snow today?",fr:"Il va neiger aujourd'hui ?",de:"Wird es heute schneien?",cat:"ski",tags:["weather","snow"]},
+  {en:"It's really icy out there.",fr:"C'est vraiment verglacé.",de:"Es ist sehr vereist da draußen.",cat:"ski",tags:["weather","ice"]},
+  {en:"The wind is picking up.",fr:"Le vent se lève.",de:"Der Wind nimmt zu.",cat:"ski",tags:["weather","wind"]},
+  {en:"There's an avalanche risk today.",fr:"Il y a un risque d'avalanche aujourd'hui.",de:"Es besteht heute Lawinengefahr.",cat:"ski",tags:["avalanche","safety"]},
+  {en:"What's the avalanche risk level?",fr:"Quel est le niveau de risque d'avalanche ?",de:"Welche Lawinenwarnstufe gilt heute?",cat:"ski",tags:["avalanche","safety"]},
+  {en:"Where is the mountain restaurant?",fr:"Où est le restaurant d'altitude ?",de:"Wo ist das Bergrestaurant?",cat:"ski",tags:["restaurant","mountain"]},
+  {en:"A table on the terrace, please.",fr:"Une table en terrasse, s'il vous plaît.",de:"Einen Tisch auf der Terrasse, bitte.",cat:"ski",tags:["restaurant","terrace"]},
+  {en:"A hot chocolate, please.",fr:"Un chocolat chaud, s'il vous plaît.",de:"Eine heiße Schokolade, bitte.",cat:"ski",tags:["drinks","warm"]},
+  {en:"A mulled wine, please.",fr:"Un vin chaud, s'il vous plaît.",de:"Einen Glühwein, bitte.",cat:"ski",tags:["drinks","mulled wine"]},
+  {en:"A Schnapps to warm up!",fr:"Une eau-de-vie pour se réchauffer !",de:"Einen Schnaps zum Aufwärmen!",cat:"ski",tags:["drinks","schnapps","apres-ski"]},
+  {en:"Where is the best après-ski bar?",fr:"C'est où le meilleur bar d'après-ski ?",de:"Wo ist die beste Après-Ski-Bar?",cat:"ski",tags:["apres-ski","bar"]},
+  {en:"What time does après-ski start?",fr:"L'après-ski commence à quelle heure ?",de:"Wann fängt das Après-Ski an?",cat:"ski",tags:["apres-ski"]},
+  {en:"Is there live music tonight?",fr:"Il y a de la musique live ce soir ?",de:"Gibt es heute Abend Live-Musik?",cat:"ski",tags:["music","nightlife"]},
+  {en:"Is there a DJ tonight?",fr:"Il y a un DJ ce soir ?",de:"Gibt es heute Abend einen DJ?",cat:"ski",tags:["dj","nightlife"]},
+  {en:"What time does this place close?",fr:"Ça ferme à quelle heure ici ?",de:"Wann schließt es hier?",cat:"ski",tags:["nightlife","hours"]},
+  {en:"Where do people go out in this town?",fr:"Où est-ce que les gens sortent ici ?",de:"Wo gehen die Leute hier aus?",cat:"ski",tags:["nightlife"]},
+  {en:"Cheers! (toast)",fr:"Santé !",de:"Prost!",cat:"ski",tags:["toast","drinks"]},
+  {en:"One more round!",fr:"Une autre tournée !",de:"Noch eine Runde!",cat:"ski",tags:["drinks","bar"]},
+  {en:"That run was epic!",fr:"Cette descente était incroyable !",de:"Diese Abfahrt war episch!",cat:"ski",tags:["reaction","skiing"]},
+  {en:"What a view!",fr:"Quelle vue !",de:"Was für eine Aussicht!",cat:"ski",tags:["view","mountain"]},
+  {en:"It's absolutely beautiful up here.",fr:"C'est magnifique là-haut.",de:"Es ist wunderschön hier oben.",cat:"ski",tags:["view","mountain"]},
+  {en:"I need a break — my legs are burning.",fr:"J'ai besoin d'une pause, j'ai les cuisses en feu.",de:"Ich brauche eine Pause — meine Beine brennen.",cat:"ski",tags:["tired","break"]},
+  {en:"Last run of the day!",fr:"La dernière descente de la journée !",de:"Die letzte Abfahrt des Tages!",cat:"ski",tags:["skiing"]},
+  {en:"Same time tomorrow?",fr:"Même heure demain ?",de:"Morgen zur gleichen Zeit?",cat:"ski",tags:["meetup"]},
+  {en:"Where should we meet?",fr:"On se retrouve où ?",de:"Wo treffen wir uns?",cat:"ski",tags:["meetup"]},
+  {en:"I'll meet you at the bottom.",fr:"Je vous retrouve en bas.",de:"Ich treffe euch unten.",cat:"ski",tags:["meetup"]},
+  {en:"Wait for me at the top!",fr:"Attendez-moi en haut !",de:"Wartet oben auf mich!",cat:"ski",tags:["meetup"]},
+
+  // ── NUMBERS ──
+  {en:"Zero",fr:"Zéro",de:"Null",cat:"numbers",tags:["number"]},
+  {en:"One",fr:"Un",de:"Eins",cat:"numbers",tags:["number"]},
+  {en:"Two",fr:"Deux",de:"Zwei",cat:"numbers",tags:["number"]},
+  {en:"Three",fr:"Trois",de:"Drei",cat:"numbers",tags:["number"]},
+  {en:"Four",fr:"Quatre",de:"Vier",cat:"numbers",tags:["number"]},
+  {en:"Five",fr:"Cinq",de:"Fünf",cat:"numbers",tags:["number"]},
+  {en:"Six",fr:"Six",de:"Sechs",cat:"numbers",tags:["number"]},
+  {en:"Seven",fr:"Sept",de:"Sieben",cat:"numbers",tags:["number"]},
+  {en:"Eight",fr:"Huit",de:"Acht",cat:"numbers",tags:["number"]},
+  {en:"Nine",fr:"Neuf",de:"Neun",cat:"numbers",tags:["number"]},
+  {en:"Ten",fr:"Dix",de:"Zehn",cat:"numbers",tags:["number"]},
+  {en:"Twenty",fr:"Vingt",de:"Zwanzig",cat:"numbers",tags:["number"]},
+  {en:"Fifty",fr:"Cinquante",de:"Fünfzig",cat:"numbers",tags:["number"]},
+  {en:"One hundred",fr:"Cent",de:"Hundert",cat:"numbers",tags:["number"]},
+  {en:"One thousand",fr:"Mille",de:"Tausend",cat:"numbers",tags:["number"]},
+  {en:"First",fr:"Premier / Première",de:"Erster / Erste",cat:"numbers",tags:["ordinal"]},
+  {en:"Second",fr:"Deuxième",de:"Zweiter / Zweite",cat:"numbers",tags:["ordinal"]},
+  {en:"Last",fr:"Dernier / Dernière",de:"Letzter / Letzte",cat:"numbers",tags:["ordinal"]},
+
+  // ── TIME & DAYS ──
+  {en:"What time is it?",fr:"Quelle heure est-il ?",de:"Wie spät ist es?",cat:"time",tags:["time","clock"]},
+  {en:"Today",fr:"Aujourd'hui",de:"Heute",cat:"time",tags:["time"]},
+  {en:"Tomorrow",fr:"Demain",de:"Morgen",cat:"time",tags:["time"]},
+  {en:"Yesterday",fr:"Hier",de:"Gestern",cat:"time",tags:["time"]},
+  {en:"In the morning",fr:"Le matin",de:"Am Morgen",cat:"time",tags:["time"]},
+  {en:"In the afternoon",fr:"L'après-midi",de:"Am Nachmittag",cat:"time",tags:["time"]},
+  {en:"In the evening",fr:"Le soir",de:"Am Abend",cat:"time",tags:["time"]},
+  {en:"Monday",fr:"Lundi",de:"Montag",cat:"time",tags:["day"]},
+  {en:"Tuesday",fr:"Mardi",de:"Dienstag",cat:"time",tags:["day"]},
+  {en:"Wednesday",fr:"Mercredi",de:"Mittwoch",cat:"time",tags:["day"]},
+  {en:"Thursday",fr:"Jeudi",de:"Donnerstag",cat:"time",tags:["day"]},
+  {en:"Friday",fr:"Vendredi",de:"Freitag",cat:"time",tags:["day"]},
+  {en:"Saturday",fr:"Samedi",de:"Samstag",cat:"time",tags:["day"]},
+  {en:"Sunday",fr:"Dimanche",de:"Sonntag",cat:"time",tags:["day"]},
+  {en:"Open / Closed",fr:"Ouvert / Fermé",de:"Offen / Geschlossen",cat:"time",tags:["hours"]},
+  {en:"What are your opening hours?",fr:"Quelles sont vos heures d'ouverture ?",de:"Was sind Ihre Öffnungszeiten?",cat:"time",tags:["hours"]},
+];
+
+const CATEGORIES = [
+  {id:'all',       label:'All',          emoji:'🌍'},
+  {id:'greetings', label:'Greetings',    emoji:'👋'},
+  {id:'restaurant',label:'Restaurant',  emoji:'🍽'},
+  {id:'transportation',label:'Getting Around',emoji:'🚆'},
+  {id:'hotel',     label:'Hotel',        emoji:'🏨'},
+  {id:'shopping',  label:'Shopping',     emoji:'🛍'},
+  {id:'emergency', label:'Emergency',    emoji:'🚨'},
+  {id:'airport',   label:'Airport',      emoji:'✈️'},
+  {id:'directions',label:'Directions',  emoji:'🗺'},
+  {id:'smalltalk', label:'Small Talk',  emoji:'💬'},
+  {id:'ski',       label:'Ski & Alps',   emoji:'⛷️'},
+  {id:'numbers',   label:'Numbers',      emoji:'🔢'},
+  {id:'time',      label:'Time & Days',  emoji:'🕐'},
+];
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let activeCat = 'all';
+let favorites = JSON.parse(localStorage.getItem('favs') || '[]');
+let phraseStars = JSON.parse(localStorage.getItem('stars') || '{}');
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+window.addEventListener('load', () => {
+  updateLangBar();
+  buildCatBar();
+  renderPhrases();
+  renderFavorites();
+  checkOnline();
+  window.addEventListener('online',  () => { isOnline = true;  document.getElementById('offlinePill').classList.remove('show'); });
+  window.addEventListener('offline', () => { isOnline = false; document.getElementById('offlinePill').classList.add('show'); });
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+});
+
+function checkOnline() {
+  isOnline = navigator.onLine;
+  document.getElementById('offlinePill').classList.toggle('show', !isOnline);
+}
+
+// ═══════════════════════════════════════════
+// LANGUAGE MANAGEMENT
+// ═══════════════════════════════════════════
+function updateLangBar() {
+  document.getElementById('fromFlag').textContent = LANGS[fromLang].flag;
+  document.getElementById('fromName').textContent = LANGS[fromLang].name;
+  document.getElementById('toFlag').textContent   = LANGS[toLang].flag;
+  document.getElementById('toName').textContent   = LANGS[toLang].name;
+  document.getElementById('inputLbl').textContent  = LANGS[fromLang].name;
+  document.getElementById('outputLbl').textContent = LANGS[toLang].name;
+}
+
+function swapLangs() {
+  [fromLang, toLang] = [toLang, fromLang];
+  const inputEl = document.getElementById('inputText');
+  const outputEl = document.getElementById('outputText');
+  // Swap text content if there's a real translation
+  if (currentOutput && !outputEl.querySelector('.output-placeholder')) {
+    inputEl.value = currentOutput;
+    currentInput = currentOutput;
+  }
+  updateLangBar();
+  renderPhrases();
+  clearOutput();
+  if (inputEl.value.trim()) scheduleTranslate();
+}
+
+function openPicker(target) {
+  pickerTarget = target;
+  const currentSel = target === 'from' ? fromLang : toLang;
+  const other = target === 'from' ? toLang : fromLang;
+  document.getElementById('pickerTitle').textContent = target === 'from' ? 'Translate from' : 'Translate to';
+  const container = document.getElementById('pickerOptions');
+  container.innerHTML = '';
+  Object.entries(LANGS).forEach(([code, info]) => {
+    if (code === other) return; // can't pick same lang for both
+    const div = document.createElement('div');
+    div.className = 'pick-opt';
+    div.innerHTML = `<span class="pick-flag">${info.flag}</span>
+      <div class="pick-info">
+        <div class="pick-name">${info.name}</div>
+        <div class="pick-sub">${info.note}</div>
+      </div>
+      ${code === currentSel ? '<span class="pick-check">✓</span>' : ''}`;
+    div.onclick = () => selectLang(code);
+    container.appendChild(div);
+  });
+  document.getElementById('pickerOverlay').classList.add('show');
+}
+
+function selectLang(code) {
+  if (pickerTarget === 'from') {
+    if (code === toLang) toLang = fromLang; // swap to avoid conflict
+    fromLang = code;
+  } else {
+    if (code === fromLang) fromLang = toLang;
+    toLang = code;
+  }
+  updateLangBar();
+  renderPhrases();
+  clearOutput();
+  closePicker();
+  const inputEl = document.getElementById('inputText');
+  if (inputEl.value.trim()) scheduleTranslate();
+}
+
+function closePicker() {
+  document.getElementById('pickerOverlay').classList.remove('show');
+}
+
+function maybeCloseOverlay(e) {
+  if (e.target === document.getElementById('pickerOverlay')) closePicker();
+}
+
+// ═══════════════════════════════════════════
+// TRANSLATION
+// ═══════════════════════════════════════════
+function scheduleTranslate() {
+  clearTimeout(translateTimer);
+  const val = document.getElementById('inputText').value.trim();
+  if (!val) { clearOutput(); return; }
+  translateTimer = setTimeout(() => doTranslate(), 900);
+}
+
+async function doTranslate() {
+  const text = document.getElementById('inputText').value.trim();
+  if (!text) return;
+  currentInput = text;
+
+  showLoading(true);
+  hideOutput();
+  document.getElementById('matchNote').style.display = 'none';
+  document.getElementById('errorMsg').style.display = 'none';
+
+  if (!isOnline) {
+    offlineTranslate(text);
+    return;
+  }
+
+  try {
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${fromLang}|${toLang}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data.responseStatus === 200 || data.responseStatus === '200') {
+      let translated = data.responseData.translatedText;
+      // MyMemory sometimes returns "MYMEMORY WARNING" for quota
+      if (translated && !translated.includes('MYMEMORY WARNING')) {
+        showOutput(translated);
+      } else {
+        offlineTranslate(text);
+      }
+    } else {
+      offlineTranslate(text);
+    }
+  } catch (e) {
+    offlineTranslate(text);
+  }
+}
+
+function offlineTranslate(text) {
+  const result = fuzzyMatch(text, fromLang, toLang);
+  if (result) {
+    showOutput(result.phrase[toLang]);
+    const confPct = Math.round(result.score * 100);
+    const note = document.getElementById('matchNote');
+    note.textContent = `✈ Offline — closest phrasebook match (${confPct}% match)`;
+    note.style.display = 'block';
+  } else {
+    showLoading(false);
+    const err = document.getElementById('errorMsg');
+    err.textContent = '✈ Offline — no close phrasebook match found. Try browsing the Phrasebook tab.';
+    err.style.display = 'block';
+    document.getElementById('outputText').innerHTML = '<span class="output-placeholder">No match found offline</span>';
+    document.getElementById('outputText').style.display = 'block';
+    currentOutput = '';
+  }
+}
+
+// Simple but effective fuzzy match
+function fuzzyMatch(query, from, to) {
+  const qNorm = norm(query);
+  const qWords = qNorm.split(/\s+/).filter(w => w.length > 2);
+
+  let best = null, bestScore = 0;
+
+  for (const p of PHRASEBOOK) {
+    if (!p[from] || !p[to]) continue;
+    const pNorm = norm(p[from]);
+    const pWords = pNorm.split(/\s+/).filter(w => w.length > 2);
+
+    // Exact match
+    if (qNorm === pNorm) return { phrase: p, score: 1 };
+
+    // Word overlap score
+    let matches = 0;
+    for (const qw of qWords) {
+      if (pWords.some(pw => pw.includes(qw) || qw.includes(pw))) matches++;
+    }
+    const total = Math.max(qWords.length, pWords.length, 1);
+    const score = matches / total;
+
+    // Substring bonus
+    const subBonus = pNorm.includes(qNorm) || qNorm.includes(pNorm) ? 0.3 : 0;
+    const finalScore = Math.min(score + subBonus, 1);
+
+    if (finalScore > bestScore) {
+      bestScore = finalScore;
+      best = p;
+    }
+  }
+
+  return bestScore >= 0.25 ? { phrase: best, score: bestScore } : null;
+}
+
+function norm(str) {
+  return str.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+
+function showLoading(show) {
+  document.getElementById('dots').classList.toggle('show', show);
+}
+
+function showOutput(text) {
+  showLoading(false);
+  currentOutput = text;
+  const el = document.getElementById('outputText');
+  el.textContent = text;
+  el.style.display = 'block';
+  document.getElementById('savBtn').classList.remove('active-fav');
+}
+
+function hideOutput() {
+  document.getElementById('outputText').style.display = 'none';
+}
+
+function clearOutput() {
+  showLoading(false);
+  currentOutput = '';
+  document.getElementById('outputText').innerHTML = '<span class="output-placeholder">Translation appears here</span>';
+  document.getElementById('outputText').style.display = 'block';
+  document.getElementById('matchNote').style.display = 'none';
+  document.getElementById('errorMsg').style.display = 'none';
+  document.getElementById('savBtn').classList.remove('active-fav');
+}
+
+function clearAll() {
+  document.getElementById('inputText').value = '';
+  clearTimeout(translateTimer);
+  clearOutput();
+}
+
+// ═══════════════════════════════════════════
+// COPY & FAVORITES
+// ═══════════════════════════════════════════
+function copyOutput() {
+  if (!currentOutput) return;
+  navigator.clipboard.writeText(currentOutput).then(() => showToast('Copied!')).catch(() => showToast('Copied!'));
+}
+
+function saveToFavs() {
+  if (!currentOutput || !currentInput) return;
+  const fav = {
+    id: Date.now(),
+    en: currentInput,
+    translated: currentOutput,
+    from: fromLang,
+    to: toLang,
+    fromFlag: LANGS[fromLang].flag,
+    toFlag: LANGS[toLang].flag,
+  };
+  // Avoid duplicates
+  if (favorites.some(f => f.translated === currentOutput)) {
+    showToast('Already saved!');
+    return;
+  }
+  favorites.unshift(fav);
+  localStorage.setItem('favs', JSON.stringify(favorites));
+  renderFavorites();
+  document.getElementById('savBtn').classList.add('active-fav');
+  showToast('Saved to favorites ⭐');
+}
+
+function deleteFav(id) {
+  favorites = favorites.filter(f => f.id !== id);
+  localStorage.setItem('favs', JSON.stringify(favorites));
+  renderFavorites();
+}
+
+function copyFav(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('Copied!')).catch(() => {});
+}
+
+function renderFavorites() {
+  const container = document.getElementById('favList');
+  if (favorites.length === 0) {
+    container.innerHTML = `<div class="empty">
+      <div class="empty-icon">⭐</div>
+      <h3>No saved phrases yet</h3>
+      <p>Tap the Save button after translating, or star phrases in the Phrasebook.</p>
+    </div>`;
+    return;
+  }
+  container.innerHTML = favorites.map(f => `
+    <div class="fav-card">
+      <div class="fav-content">
+        <div class="fav-en">${escHtml(f.en)}</div>
+        <div class="fav-translated">${escHtml(f.translated)}</div>
+        <div class="fav-meta">${f.fromFlag} ${LANGS[f.from]?.name || f.from} → ${f.toFlag} ${LANGS[f.to]?.name || f.to}</div>
+      </div>
+      <div class="fav-actions">
+        <button class="fav-copy-btn" onclick="copyFav('${escAttr(f.translated)}')" title="Copy">📋</button>
+        <button class="fav-del-btn" onclick="deleteFav(${f.id})" title="Remove">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════
+// PHRASEBOOK
+// ═══════════════════════════════════════════
+function buildCatBar() {
+  const bar = document.getElementById('catBar');
+  bar.innerHTML = CATEGORIES.map(c =>
+    `<button class="cat-pill ${c.id === activeCat ? 'on' : ''}" onclick="setCat('${c.id}')">${c.emoji} ${c.label}</button>`
+  ).join('');
+}
+
+function setCat(id) {
+  activeCat = id;
+  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.cat-pill').forEach(p => {
+    if (p.textContent.trim().includes(CATEGORIES.find(c=>c.id===id)?.label)) p.classList.add('on');
+  });
+  renderPhrases();
+}
+
+function renderPhrases() {
+  const phrases = activeCat === 'all' ? PHRASEBOOK : PHRASEBOOK.filter(p => p.cat === activeCat);
+
+  // Determine display from/to for phrasebook
+  const displayFrom = fromLang;
+  const displayTo   = toLang;
+
+  document.getElementById('phraseList').innerHTML = phrases.map((p, i) => {
+    const id = `p${i}`;
+    const isStarred = phraseStars[p.en + p.cat];
+    return `<div class="phrase-card" id="${id}">
+      <div class="phrase-top" onclick="togglePhrase('${id}')">
+        <div class="phrase-en">${escHtml(p[displayFrom] || p.en)}</div>
+        <div class="phrase-tgt">${escHtml(p[displayTo] || p.fr)}</div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="phrase-detail">
+        <div class="lang-row">
+          <span class="lc">EN</span>
+          <span class="lp">${escHtml(p.en)}</span>
+        </div>
+        <div class="lang-row">
+          <span class="lc">FR</span>
+          <span class="lp">${escHtml(p.fr)}</span>
+        </div>
+        <div class="lang-row">
+          <span class="lc">DE</span>
+          <span class="lp">${escHtml(p.de)}</span>
+          <button class="p-star ${isStarred ? 'on' : ''}" onclick="togglePhraStar(event,'${escAttr(p.en)}','${escAttr(p.cat)}','${escAttr(p.fr)}','${escAttr(p.de)}')">${isStarred ? '★' : '☆'}</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function togglePhrase(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+function togglePhraStar(event, en, cat, fr, de) {
+  event.stopPropagation();
+  const key = en + cat;
+  if (phraseStars[key]) {
+    delete phraseStars[key];
+    favorites = favorites.filter(f => f.en !== en || f.from !== 'phrase');
+    showToast('Removed from favorites');
+  } else {
+    phraseStars[key] = true;
+    const fav = { id: Date.now(), en: en, translated: toLang === 'fr' ? fr : de, from: 'phrase', to: toLang, fromFlag: '📖', toFlag: LANGS[toLang].flag };
+    if (!favorites.some(f => f.en === en && f.translated === fav.translated)) {
+      favorites.unshift(fav);
+    }
+    showToast('Saved to favorites ⭐');
+  }
+  localStorage.setItem('stars', JSON.stringify(phraseStars));
+  localStorage.setItem('favs', JSON.stringify(favorites));
+  renderPhrases();
+  renderFavorites();
+}
+
+// ═══════════════════════════════════════════
+// VOICE INPUT
+// ═══════════════════════════════════════════
+function startVoice() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { showToast('Voice not supported on this browser'); return; }
+  const r = new SR();
+  r.lang = fromLang === 'en' ? 'en-US' : fromLang === 'fr' ? 'fr-FR' : 'de-AT';
+  r.interimResults = false;
+  r.maxAlternatives = 1;
+  const micBtn = document.getElementById('micBtn');
+  micBtn.textContent = '🔴';
+  r.onresult = e => {
+    document.getElementById('inputText').value = e.results[0][0].transcript;
+    micBtn.textContent = '🎙';
+    scheduleTranslate();
+  };
+  r.onerror = () => { micBtn.textContent = '🎙'; showToast('Could not hear — try again'); };
+  r.onend = () => { micBtn.textContent = '🎙'; };
+  r.start();
+}
+
+// ═══════════════════════════════════════════
+// TAB NAVIGATION
+// ═══════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('on'));
+  document.getElementById(`panel-${tab}`).classList.add('active');
+  document.getElementById(`nav-${tab}`).classList.add('on');
+  if (tab === 'favorites') renderFavorites();
+}
+
+// ═══════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+function escHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) {
+  return (s||'').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+}
+</script>
+
+</body>
+</html>
