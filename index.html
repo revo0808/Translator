@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Euro Fling">
+  <meta name="apple-mobile-web-app-title" content="Euro Spring Fling">
   <meta name="theme-color" content="#2a1a0e">
-  <title>Euro Fling — Travel Translator</title>
+  <title>Euro Spring Fling Translator</title>
   <link rel="manifest" href="manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -353,6 +353,83 @@
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+    /* ── DICTIONARY TAB ── */
+    .dict-search-wrap {
+      padding: 12px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .dict-search-row {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 12px; padding: 0 12px;
+    }
+    .dict-search-row:focus-within { border-color: var(--accent); }
+    .dict-search-icon { font-size: 16px; color: var(--text2); flex-shrink: 0; }
+    .dict-input {
+      flex: 1; background: none; border: none; outline: none;
+      font-family: 'Nunito', sans-serif; font-size: 16px;
+      color: var(--text); padding: 11px 0;
+    }
+    .dict-input::placeholder { color: var(--text2); opacity: 0.55; }
+    .dict-clear {
+      background: none; border: none; font-size: 16px; color: var(--text2);
+      cursor: pointer; padding: 4px; touch-action: manipulation;
+    }
+    .dict-filter-row {
+      display: flex; gap: 6px; margin-top: 9px; overflow-x: auto;
+      scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    }
+    .dict-filter-row::-webkit-scrollbar { display: none; }
+    .dict-pill {
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 20px; padding: 4px 12px;
+      font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 600;
+      color: var(--text2); cursor: pointer; white-space: nowrap;
+      flex-shrink: 0; touch-action: manipulation;
+    }
+    .dict-pill.on { background: var(--accent); border-color: var(--accent); color: white; }
+    .dict-list {
+      flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain; padding: 8px 14px 14px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .dict-card {
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 10px 14px;
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 4px 10px; align-items: start;
+    }
+    .dict-en { font-size: 14px; font-weight: 700; color: var(--text); }
+    .dict-fr {
+      font-family: 'Playfair Display', serif; font-style: italic;
+      font-size: 14px; color: var(--accent);
+    }
+    .dict-de {
+      font-family: 'Playfair Display', serif; font-style: italic;
+      font-size: 14px; color: #6a8fb0;
+    }
+    .dict-pos {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
+      text-transform: uppercase; color: var(--text2); grid-column: 1 / -1;
+      margin-bottom: 1px;
+    }
+    .dict-header {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 0 10px; padding: 6px 14px 2px;
+      flex-shrink: 0;
+    }
+    .dict-header span {
+      font-size: 10px; font-weight: 800; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--text2);
+    }
+    .dict-empty {
+      text-align: center; padding: 40px 20px; color: var(--text2);
+      font-size: 14px; font-style: italic;
+    }
+    .dict-count {
+      font-size: 11px; color: var(--text2); padding: 4px 14px 6px;
+      flex-shrink: 0;
+    }
+
     /* ── ERROR ── */
     .error-msg {
       font-size: 14px; color: #c04040; font-style: italic;
@@ -377,7 +454,7 @@
 
 <!-- Header -->
 <header class="header">
-  <div class="logo">Euro <span>Fling</span></div>
+  <div class="logo">Euro Spring <span>Fling</span></div>
   <div class="offline-pill" id="offlinePill">✈ Offline Mode</div>
 </header>
 
@@ -438,6 +515,25 @@
     <div class="fav-wrap" id="favList"></div>
   </div>
 
+  <!-- DICTIONARY -->
+  <div class="tab-panel" id="panel-dictionary">
+    <div class="dict-search-wrap">
+      <div class="dict-search-row">
+        <span class="dict-search-icon">🔍</span>
+        <input class="dict-input" id="dictInput" type="search" placeholder="Search in English, French or German…" oninput="renderDict()" autocomplete="off" autocorrect="off" spellcheck="false">
+        <button class="dict-clear" onclick="clearDictSearch()" id="dictClearBtn" style="display:none">✕</button>
+      </div>
+      <div class="dict-filter-row" id="dictFilterRow"></div>
+    </div>
+    <div class="dict-header">
+      <span>🇺🇸 English</span>
+      <span>🇫🇷 Français</span>
+      <span>🇦🇹 Deutsch</span>
+    </div>
+    <div class="dict-count" id="dictCount"></div>
+    <div class="dict-list" id="dictList"></div>
+  </div>
+
 </div>
 
 <!-- Bottom Nav -->
@@ -447,6 +543,9 @@
   </button>
   <button class="nav-btn" id="nav-phrasebook" onclick="switchTab('phrasebook')">
     <span class="nav-icon">📖</span><span class="nav-lbl">Phrasebook</span>
+  </button>
+  <button class="nav-btn" id="nav-dictionary" onclick="switchTab('dictionary')">
+    <span class="nav-icon">📚</span><span class="nav-lbl">Dictionary</span>
   </button>
   <button class="nav-btn" id="nav-favorites" onclick="switchTab('favorites')">
     <span class="nav-icon">⭐</span><span class="nav-lbl">Favorites</span>
@@ -825,6 +924,7 @@ window.addEventListener('load', () => {
   buildCatBar();
   renderPhrases();
   renderFavorites();
+  initDict();
   checkOnline();
   window.addEventListener('online',  () => { isOnline = true;  document.getElementById('offlinePill').classList.remove('show'); });
   window.addEventListener('offline', () => { isOnline = false; document.getElementById('offlinePill').classList.add('show'); });
@@ -1231,6 +1331,7 @@ function switchTab(tab) {
   document.getElementById(`panel-${tab}`).classList.add('active');
   document.getElementById(`nav-${tab}`).classList.add('on');
   if (tab === 'favorites') renderFavorites();
+  if (tab === 'dictionary') renderDict();
 }
 
 // ═══════════════════════════════════════════
@@ -1243,6 +1344,453 @@ function showToast(msg) {
   el.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+// ═══════════════════════════════════════════
+// DICTIONARY DATA
+// ═══════════════════════════════════════════
+const DICT = [
+  // ── PEOPLE & BODY ──
+  {en:"man",fr:"homme",de:"Mann",pos:"noun",cat:"people"},
+  {en:"woman",fr:"femme",de:"Frau",pos:"noun",cat:"people"},
+  {en:"boy",fr:"garçon",de:"Junge",pos:"noun",cat:"people"},
+  {en:"girl",fr:"fille",de:"Mädchen",pos:"noun",cat:"people"},
+  {en:"child",fr:"enfant",de:"Kind",pos:"noun",cat:"people"},
+  {en:"baby",fr:"bébé",de:"Baby",pos:"noun",cat:"people"},
+  {en:"friend",fr:"ami / amie",de:"Freund / Freundin",pos:"noun",cat:"people"},
+  {en:"family",fr:"famille",de:"Familie",pos:"noun",cat:"people"},
+  {en:"doctor",fr:"médecin",de:"Arzt / Ärztin",pos:"noun",cat:"people"},
+  {en:"police",fr:"police",de:"Polizei",pos:"noun",cat:"people"},
+  {en:"head",fr:"tête",de:"Kopf",pos:"noun",cat:"people"},
+  {en:"face",fr:"visage",de:"Gesicht",pos:"noun",cat:"people"},
+  {en:"eye",fr:"œil",de:"Auge",pos:"noun",cat:"people"},
+  {en:"ear",fr:"oreille",de:"Ohr",pos:"noun",cat:"people"},
+  {en:"nose",fr:"nez",de:"Nase",pos:"noun",cat:"people"},
+  {en:"mouth",fr:"bouche",de:"Mund",pos:"noun",cat:"people"},
+  {en:"hand",fr:"main",de:"Hand",pos:"noun",cat:"people"},
+  {en:"arm",fr:"bras",de:"Arm",pos:"noun",cat:"people"},
+  {en:"leg",fr:"jambe",de:"Bein",pos:"noun",cat:"people"},
+  {en:"back",fr:"dos",de:"Rücken",pos:"noun",cat:"people"},
+  {en:"stomach",fr:"ventre",de:"Bauch",pos:"noun",cat:"people"},
+  {en:"knee",fr:"genou",de:"Knie",pos:"noun",cat:"people"},
+  {en:"foot",fr:"pied",de:"Fuß",pos:"noun",cat:"people"},
+  {en:"shoulder",fr:"épaule",de:"Schulter",pos:"noun",cat:"people"},
+
+  // ── FOOD & DRINK ──
+  {en:"bread",fr:"pain",de:"Brot",pos:"noun",cat:"food"},
+  {en:"butter",fr:"beurre",de:"Butter",pos:"noun",cat:"food"},
+  {en:"cheese",fr:"fromage",de:"Käse",pos:"noun",cat:"food"},
+  {en:"egg",fr:"œuf",de:"Ei",pos:"noun",cat:"food"},
+  {en:"meat",fr:"viande",de:"Fleisch",pos:"noun",cat:"food"},
+  {en:"chicken",fr:"poulet",de:"Hähnchen",pos:"noun",cat:"food"},
+  {en:"beef",fr:"bœuf",de:"Rindfleisch",pos:"noun",cat:"food"},
+  {en:"pork",fr:"porc",de:"Schweinefleisch",pos:"noun",cat:"food"},
+  {en:"fish",fr:"poisson",de:"Fisch",pos:"noun",cat:"food"},
+  {en:"seafood",fr:"fruits de mer",de:"Meeresfrüchte",pos:"noun",cat:"food"},
+  {en:"vegetable",fr:"légume",de:"Gemüse",pos:"noun",cat:"food"},
+  {en:"salad",fr:"salade",de:"Salat",pos:"noun",cat:"food"},
+  {en:"soup",fr:"soupe",de:"Suppe",pos:"noun",cat:"food"},
+  {en:"pasta",fr:"pâtes",de:"Nudeln",pos:"noun",cat:"food"},
+  {en:"rice",fr:"riz",de:"Reis",pos:"noun",cat:"food"},
+  {en:"potato",fr:"pomme de terre",de:"Kartoffel",pos:"noun",cat:"food"},
+  {en:"tomato",fr:"tomate",de:"Paradeiser (AT) / Tomate",pos:"noun",cat:"food"},
+  {en:"onion",fr:"oignon",de:"Zwiebel",pos:"noun",cat:"food"},
+  {en:"garlic",fr:"ail",de:"Knoblauch",pos:"noun",cat:"food"},
+  {en:"mushroom",fr:"champignon",de:"Pilz",pos:"noun",cat:"food"},
+  {en:"apple",fr:"pomme",de:"Apfel",pos:"noun",cat:"food"},
+  {en:"orange",fr:"orange",de:"Orange",pos:"noun",cat:"food"},
+  {en:"apricot",fr:"abricot",de:"Marille (AT) / Aprikose",pos:"noun",cat:"food"},
+  {en:"strawberry",fr:"fraise",de:"Erdbeere",pos:"noun",cat:"food"},
+  {en:"chocolate",fr:"chocolat",de:"Schokolade",pos:"noun",cat:"food"},
+  {en:"cake",fr:"gâteau",de:"Kuchen",pos:"noun",cat:"food"},
+  {en:"ice cream",fr:"glace",de:"Eis",pos:"noun",cat:"food"},
+  {en:"dessert",fr:"dessert",de:"Nachspeise",pos:"noun",cat:"food"},
+  {en:"breakfast",fr:"petit-déjeuner",de:"Frühstück",pos:"noun",cat:"food"},
+  {en:"lunch",fr:"déjeuner",de:"Mittagessen",pos:"noun",cat:"food"},
+  {en:"dinner",fr:"dîner",de:"Abendessen",pos:"noun",cat:"food"},
+  {en:"snack",fr:"en-cas",de:"Snack",pos:"noun",cat:"food"},
+  {en:"water",fr:"eau",de:"Wasser",pos:"noun",cat:"food"},
+  {en:"juice",fr:"jus",de:"Saft",pos:"noun",cat:"food"},
+  {en:"coffee",fr:"café",de:"Kaffee",pos:"noun",cat:"food"},
+  {en:"tea",fr:"thé",de:"Tee",pos:"noun",cat:"food"},
+  {en:"milk",fr:"lait",de:"Milch",pos:"noun",cat:"food"},
+  {en:"beer",fr:"bière",de:"Bier",pos:"noun",cat:"food"},
+  {en:"wine",fr:"vin",de:"Wein",pos:"noun",cat:"food"},
+  {en:"red wine",fr:"vin rouge",de:"Rotwein",pos:"noun",cat:"food"},
+  {en:"white wine",fr:"vin blanc",de:"Weißwein",pos:"noun",cat:"food"},
+  {en:"sparkling water",fr:"eau gazeuse",de:"Mineralwasser",pos:"noun",cat:"food"},
+  {en:"still water",fr:"eau plate",de:"stilles Wasser",pos:"noun",cat:"food"},
+  {en:"hot chocolate",fr:"chocolat chaud",de:"heiße Schokolade",pos:"noun",cat:"food"},
+  {en:"mulled wine",fr:"vin chaud",de:"Glühwein",pos:"noun",cat:"food"},
+  {en:"schnapps",fr:"eau-de-vie",de:"Schnaps",pos:"noun",cat:"food"},
+  {en:"menu",fr:"carte",de:"Speisekarte",pos:"noun",cat:"food"},
+  {en:"bill / check",fr:"addition",de:"Rechnung",pos:"noun",cat:"food"},
+  {en:"tip",fr:"pourboire",de:"Trinkgeld",pos:"noun",cat:"food"},
+  {en:"portion",fr:"portion",de:"Portion",pos:"noun",cat:"food"},
+  {en:"starter",fr:"entrée",de:"Vorspeise",pos:"noun",cat:"food"},
+  {en:"main course",fr:"plat principal",de:"Hauptgericht",pos:"noun",cat:"food"},
+  {en:"side dish",fr:"accompagnement",de:"Beilage",pos:"noun",cat:"food"},
+  {en:"sauce",fr:"sauce",de:"Soße",pos:"noun",cat:"food"},
+  {en:"salt",fr:"sel",de:"Salz",pos:"noun",cat:"food"},
+  {en:"pepper",fr:"poivre",de:"Pfeffer",pos:"noun",cat:"food"},
+  {en:"spicy",fr:"épicé",de:"scharf",pos:"adj",cat:"food"},
+  {en:"sweet",fr:"sucré",de:"süß",pos:"adj",cat:"food"},
+  {en:"salty",fr:"salé",de:"salzig",pos:"adj",cat:"food"},
+  {en:"sour",fr:"acide",de:"sauer",pos:"adj",cat:"food"},
+  {en:"bitter",fr:"amer",de:"bitter",pos:"adj",cat:"food"},
+  {en:"delicious",fr:"délicieux",de:"köstlich",pos:"adj",cat:"food"},
+  {en:"organic",fr:"bio",de:"bio",pos:"adj",cat:"food"},
+  {en:"gluten-free",fr:"sans gluten",de:"glutenfrei",pos:"adj",cat:"food"},
+  {en:"vegetarian",fr:"végétarien",de:"vegetarisch",pos:"adj",cat:"food"},
+  {en:"vegan",fr:"vegan",de:"vegan",pos:"adj",cat:"food"},
+  {en:"allergy",fr:"allergie",de:"Allergie",pos:"noun",cat:"food"},
+  {en:"nuts",fr:"noix",de:"Nüsse",pos:"noun",cat:"food"},
+
+  // ── TRAVEL & TRANSPORT ──
+  {en:"airport",fr:"aéroport",de:"Flughafen",pos:"noun",cat:"travel"},
+  {en:"train station",fr:"gare",de:"Bahnhof",pos:"noun",cat:"travel"},
+  {en:"bus stop",fr:"arrêt de bus",de:"Bushaltestelle",pos:"noun",cat:"travel"},
+  {en:"metro / subway",fr:"métro",de:"U-Bahn",pos:"noun",cat:"travel"},
+  {en:"tram",fr:"tramway",de:"Straßenbahn",pos:"noun",cat:"travel"},
+  {en:"taxi",fr:"taxi",de:"Taxi",pos:"noun",cat:"travel"},
+  {en:"car",fr:"voiture",de:"Auto",pos:"noun",cat:"travel"},
+  {en:"bike",fr:"vélo",de:"Fahrrad",pos:"noun",cat:"travel"},
+  {en:"train",fr:"train",de:"Zug",pos:"noun",cat:"travel"},
+  {en:"bus",fr:"bus",de:"Bus",pos:"noun",cat:"travel"},
+  {en:"plane",fr:"avion",de:"Flugzeug",pos:"noun",cat:"travel"},
+  {en:"boat",fr:"bateau",de:"Boot",pos:"noun",cat:"travel"},
+  {en:"ticket",fr:"billet",de:"Fahrkarte",pos:"noun",cat:"travel"},
+  {en:"passport",fr:"passeport",de:"Reisepass",pos:"noun",cat:"travel"},
+  {en:"luggage / bag",fr:"bagage",de:"Gepäck",pos:"noun",cat:"travel"},
+  {en:"suitcase",fr:"valise",de:"Koffer",pos:"noun",cat:"travel"},
+  {en:"backpack",fr:"sac à dos",de:"Rucksack",pos:"noun",cat:"travel"},
+  {en:"platform",fr:"voie",de:"Gleis",pos:"noun",cat:"travel"},
+  {en:"departure",fr:"départ",de:"Abfahrt",pos:"noun",cat:"travel"},
+  {en:"arrival",fr:"arrivée",de:"Ankunft",pos:"noun",cat:"travel"},
+  {en:"delay",fr:"retard",de:"Verspätung",pos:"noun",cat:"travel"},
+  {en:"connection",fr:"correspondance",de:"Anschluss",pos:"noun",cat:"travel"},
+  {en:"one way",fr:"aller simple",de:"einfache Fahrt",pos:"noun",cat:"travel"},
+  {en:"return / round trip",fr:"aller-retour",de:"Hin- und Rückfahrt",pos:"noun",cat:"travel"},
+  {en:"reservation",fr:"réservation",de:"Reservierung",pos:"noun",cat:"travel"},
+  {en:"boarding pass",fr:"carte d'embarquement",de:"Bordkarte",pos:"noun",cat:"travel"},
+  {en:"gate",fr:"porte",de:"Gate",pos:"noun",cat:"travel"},
+  {en:"customs",fr:"douane",de:"Zoll",pos:"noun",cat:"travel"},
+  {en:"check-in",fr:"enregistrement",de:"Check-in",pos:"noun",cat:"travel"},
+  {en:"check-out",fr:"départ",de:"Check-out",pos:"noun",cat:"travel"},
+  {en:"map",fr:"carte / plan",de:"Karte / Stadtplan",pos:"noun",cat:"travel"},
+  {en:"left",fr:"gauche",de:"links",pos:"dir",cat:"travel"},
+  {en:"right",fr:"droite",de:"rechts",pos:"dir",cat:"travel"},
+  {en:"straight ahead",fr:"tout droit",de:"geradeaus",pos:"dir",cat:"travel"},
+  {en:"near",fr:"près",de:"nah",pos:"adj",cat:"travel"},
+  {en:"far",fr:"loin",de:"weit",pos:"adj",cat:"travel"},
+  {en:"north",fr:"nord",de:"Norden",pos:"noun",cat:"travel"},
+  {en:"south",fr:"sud",de:"Süden",pos:"noun",cat:"travel"},
+  {en:"east",fr:"est",de:"Osten",pos:"noun",cat:"travel"},
+  {en:"west",fr:"ouest",de:"Westen",pos:"noun",cat:"travel"},
+
+  // ── ACCOMMODATION ──
+  {en:"hotel",fr:"hôtel",de:"Hotel",pos:"noun",cat:"accommodation"},
+  {en:"hostel",fr:"auberge de jeunesse",de:"Jugendherberge",pos:"noun",cat:"accommodation"},
+  {en:"apartment",fr:"appartement",de:"Wohnung",pos:"noun",cat:"accommodation"},
+  {en:"room",fr:"chambre",de:"Zimmer",pos:"noun",cat:"accommodation"},
+  {en:"double room",fr:"chambre double",de:"Doppelzimmer",pos:"noun",cat:"accommodation"},
+  {en:"single room",fr:"chambre simple",de:"Einzelzimmer",pos:"noun",cat:"accommodation"},
+  {en:"key",fr:"clé",de:"Schlüssel",pos:"noun",cat:"accommodation"},
+  {en:"floor",fr:"étage",de:"Etage",pos:"noun",cat:"accommodation"},
+  {en:"elevator / lift",fr:"ascenseur",de:"Aufzug",pos:"noun",cat:"accommodation"},
+  {en:"stairs",fr:"escaliers",de:"Treppe",pos:"noun",cat:"accommodation"},
+  {en:"wifi",fr:"Wi-Fi",de:"WLAN",pos:"noun",cat:"accommodation"},
+  {en:"towel",fr:"serviette",de:"Handtuch",pos:"noun",cat:"accommodation"},
+  {en:"pillow",fr:"oreiller",de:"Kissen",pos:"noun",cat:"accommodation"},
+  {en:"blanket",fr:"couverture",de:"Decke",pos:"noun",cat:"accommodation"},
+  {en:"bathroom",fr:"salle de bain",de:"Badezimmer",pos:"noun",cat:"accommodation"},
+  {en:"toilet",fr:"toilettes",de:"Toilette",pos:"noun",cat:"accommodation"},
+  {en:"shower",fr:"douche",de:"Dusche",pos:"noun",cat:"accommodation"},
+  {en:"balcony",fr:"balcon",de:"Balkon",pos:"noun",cat:"accommodation"},
+  {en:"safe (lockbox)",fr:"coffre-fort",de:"Safe",pos:"noun",cat:"accommodation"},
+  {en:"reception",fr:"réception",de:"Rezeption",pos:"noun",cat:"accommodation"},
+
+  // ── SHOPPING ──
+  {en:"shop / store",fr:"magasin",de:"Geschäft",pos:"noun",cat:"shopping"},
+  {en:"supermarket",fr:"supermarché",de:"Supermarkt",pos:"noun",cat:"shopping"},
+  {en:"market",fr:"marché",de:"Markt",pos:"noun",cat:"shopping"},
+  {en:"pharmacy",fr:"pharmacie",de:"Apotheke",pos:"noun",cat:"shopping"},
+  {en:"bakery",fr:"boulangerie",de:"Bäckerei",pos:"noun",cat:"shopping"},
+  {en:"price",fr:"prix",de:"Preis",pos:"noun",cat:"shopping"},
+  {en:"discount",fr:"réduction",de:"Rabatt",pos:"noun",cat:"shopping"},
+  {en:"sale",fr:"soldes",de:"Ausverkauf",pos:"noun",cat:"shopping"},
+  {en:"receipt",fr:"reçu",de:"Quittung",pos:"noun",cat:"shopping"},
+  {en:"cash",fr:"espèces",de:"Bargeld",pos:"noun",cat:"shopping"},
+  {en:"card",fr:"carte",de:"Karte",pos:"noun",cat:"shopping"},
+  {en:"size",fr:"taille",de:"Größe",pos:"noun",cat:"shopping"},
+  {en:"small",fr:"petit",de:"klein",pos:"adj",cat:"shopping"},
+  {en:"medium",fr:"moyen",de:"mittel",pos:"adj",cat:"shopping"},
+  {en:"large",fr:"grand",de:"groß",pos:"adj",cat:"shopping"},
+  {en:"expensive",fr:"cher",de:"teuer",pos:"adj",cat:"shopping"},
+  {en:"cheap",fr:"bon marché",de:"günstig",pos:"adj",cat:"shopping"},
+  {en:"free (no cost)",fr:"gratuit",de:"kostenlos",pos:"adj",cat:"shopping"},
+  {en:"ATM",fr:"distributeur",de:"Geldautomat",pos:"noun",cat:"shopping"},
+  {en:"exchange rate",fr:"taux de change",de:"Wechselkurs",pos:"noun",cat:"shopping"},
+  {en:"sunscreen",fr:"crème solaire",de:"Sonnencreme",pos:"noun",cat:"shopping"},
+  {en:"umbrella",fr:"parapluie",de:"Regenschirm",pos:"noun",cat:"shopping"},
+  {en:"sunglasses",fr:"lunettes de soleil",de:"Sonnenbrille",pos:"noun",cat:"shopping"},
+  {en:"jacket",fr:"veste",de:"Jacke",pos:"noun",cat:"shopping"},
+  {en:"gloves",fr:"gants",de:"Handschuhe",pos:"noun",cat:"shopping"},
+  {en:"hat",fr:"chapeau",de:"Mütze",pos:"noun",cat:"shopping"},
+  {en:"scarf",fr:"écharpe",de:"Schal",pos:"noun",cat:"shopping"},
+  {en:"boots",fr:"bottes",de:"Stiefel",pos:"noun",cat:"shopping"},
+  {en:"bag",fr:"sac",de:"Tasche",pos:"noun",cat:"shopping"},
+  {en:"batteries",fr:"piles",de:"Batterien",pos:"noun",cat:"shopping"},
+  {en:"charger",fr:"chargeur",de:"Ladegerät",pos:"noun",cat:"shopping"},
+  {en:"headphones",fr:"écouteurs",de:"Kopfhörer",pos:"noun",cat:"shopping"},
+
+  // ── SKI & MOUNTAIN ──
+  {en:"ski",fr:"ski",de:"Ski",pos:"noun",cat:"ski"},
+  {en:"snowboard",fr:"snowboard",de:"Snowboard",pos:"noun",cat:"ski"},
+  {en:"ski boots",fr:"chaussures de ski",de:"Skischuhe",pos:"noun",cat:"ski"},
+  {en:"ski poles",fr:"bâtons de ski",de:"Skistöcke",pos:"noun",cat:"ski"},
+  {en:"helmet",fr:"casque",de:"Helm",pos:"noun",cat:"ski"},
+  {en:"goggles",fr:"masque",de:"Skibrille",pos:"noun",cat:"ski"},
+  {en:"ski pass / lift pass",fr:"forfait",de:"Skipass",pos:"noun",cat:"ski"},
+  {en:"gondola",fr:"télécabine",de:"Gondelbahn",pos:"noun",cat:"ski"},
+  {en:"chairlift",fr:"télésiège",de:"Sessellift",pos:"noun",cat:"ski"},
+  {en:"drag lift",fr:"téléski",de:"Schlepplift",pos:"noun",cat:"ski"},
+  {en:"piste / run",fr:"piste",de:"Piste",pos:"noun",cat:"ski"},
+  {en:"off-piste",fr:"hors-piste",de:"Tiefschnee / Gelände",pos:"noun",cat:"ski"},
+  {en:"powder",fr:"poudreuse",de:"Pulverschnee",pos:"noun",cat:"ski"},
+  {en:"moguls",fr:"bosses",de:"Buckel",pos:"noun",cat:"ski"},
+  {en:"black run",fr:"piste noire",de:"schwarze Piste",pos:"noun",cat:"ski"},
+  {en:"red run",fr:"piste rouge",de:"rote Piste",pos:"noun",cat:"ski"},
+  {en:"blue run",fr:"piste bleue",de:"blaue Piste",pos:"noun",cat:"ski"},
+  {en:"green run (beginner)",fr:"piste verte",de:"Anfängerpiste",pos:"noun",cat:"ski"},
+  {en:"snow",fr:"neige",de:"Schnee",pos:"noun",cat:"ski"},
+  {en:"ice",fr:"glace",de:"Eis",pos:"noun",cat:"ski"},
+  {en:"avalanche",fr:"avalanche",de:"Lawine",pos:"noun",cat:"ski"},
+  {en:"fog / low visibility",fr:"brouillard",de:"Nebel",pos:"noun",cat:"ski"},
+  {en:"ski patrol",fr:"secours en montagne",de:"Pistendienst",pos:"noun",cat:"ski"},
+  {en:"mountain rescue",fr:"secours en montagne",de:"Bergrettung",pos:"noun",cat:"ski"},
+  {en:"ski school",fr:"école de ski",de:"Skischule",pos:"noun",cat:"ski"},
+  {en:"ski instructor",fr:"moniteur de ski",de:"Skilehrer",pos:"noun",cat:"ski"},
+  {en:"ski rental",fr:"location de ski",de:"Skiverleih",pos:"noun",cat:"ski"},
+  {en:"après-ski",fr:"après-ski",de:"Après-Ski",pos:"noun",cat:"ski"},
+  {en:"cable car",fr:"téléphérique",de:"Seilbahn",pos:"noun",cat:"ski"},
+  {en:"summit / top",fr:"sommet",de:"Gipfel",pos:"noun",cat:"ski"},
+  {en:"valley",fr:"vallée",de:"Tal",pos:"noun",cat:"ski"},
+  {en:"slope",fr:"pente",de:"Hang",pos:"noun",cat:"ski"},
+  {en:"mountain hut",fr:"refuge",de:"Berghütte",pos:"noun",cat:"ski"},
+  {en:"binding",fr:"fixation",de:"Bindung",pos:"noun",cat:"ski"},
+  {en:"wax",fr:"fart",de:"Wachs",pos:"noun",cat:"ski"},
+  {en:"snowflake",fr:"flocon de neige",de:"Schneeflocke",pos:"noun",cat:"ski"},
+  {en:"icy",fr:"verglacé",de:"vereist",pos:"adj",cat:"ski"},
+  {en:"fresh snow",fr:"neige fraîche",de:"Frischschnee",pos:"noun",cat:"ski"},
+
+  // ── HEALTH & EMERGENCY ──
+  {en:"help",fr:"aide / secours",de:"Hilfe",pos:"noun",cat:"health"},
+  {en:"emergency",fr:"urgence",de:"Notfall",pos:"noun",cat:"health"},
+  {en:"hospital",fr:"hôpital",de:"Krankenhaus",pos:"noun",cat:"health"},
+  {en:"doctor",fr:"médecin",de:"Arzt",pos:"noun",cat:"health"},
+  {en:"nurse",fr:"infirmier / infirmière",de:"Krankenpfleger / -pflegerin",pos:"noun",cat:"health"},
+  {en:"ambulance",fr:"ambulance",de:"Krankenwagen",pos:"noun",cat:"health"},
+  {en:"pharmacy",fr:"pharmacie",de:"Apotheke",pos:"noun",cat:"health"},
+  {en:"medicine",fr:"médicament",de:"Medikament",pos:"noun",cat:"health"},
+  {en:"pain",fr:"douleur",de:"Schmerz",pos:"noun",cat:"health"},
+  {en:"headache",fr:"mal de tête",de:"Kopfschmerzen",pos:"noun",cat:"health"},
+  {en:"fever",fr:"fièvre",de:"Fieber",pos:"noun",cat:"health"},
+  {en:"cold",fr:"rhume",de:"Erkältung",pos:"noun",cat:"health"},
+  {en:"allergy",fr:"allergie",de:"Allergie",pos:"noun",cat:"health"},
+  {en:"injured",fr:"blessé",de:"verletzt",pos:"adj",cat:"health"},
+  {en:"broken (bone)",fr:"fracturé",de:"gebrochen",pos:"adj",cat:"health"},
+  {en:"bandage",fr:"pansement",de:"Verband",pos:"noun",cat:"health"},
+  {en:"insurance",fr:"assurance",de:"Versicherung",pos:"noun",cat:"health"},
+  {en:"blood type",fr:"groupe sanguin",de:"Blutgruppe",pos:"noun",cat:"health"},
+  {en:"prescription",fr:"ordonnance",de:"Rezept",pos:"noun",cat:"health"},
+  {en:"ibuprofen",fr:"ibuprofène",de:"Ibuprofen",pos:"noun",cat:"health"},
+  {en:"aspirin",fr:"aspirine",de:"Aspirin",pos:"noun",cat:"health"},
+
+  // ── PLACES & SIGHTSEEING ──
+  {en:"city center",fr:"centre-ville",de:"Stadtzentrum",pos:"noun",cat:"places"},
+  {en:"old town",fr:"vieille ville",de:"Altstadt",pos:"noun",cat:"places"},
+  {en:"street",fr:"rue",de:"Straße",pos:"noun",cat:"places"},
+  {en:"square",fr:"place",de:"Platz",pos:"noun",cat:"places"},
+  {en:"bridge",fr:"pont",de:"Brücke",pos:"noun",cat:"places"},
+  {en:"church",fr:"église",de:"Kirche",pos:"noun",cat:"places"},
+  {en:"museum",fr:"musée",de:"Museum",pos:"noun",cat:"places"},
+  {en:"castle",fr:"château",de:"Schloss",pos:"noun",cat:"places"},
+  {en:"park",fr:"parc",de:"Park",pos:"noun",cat:"places"},
+  {en:"beach",fr:"plage",de:"Strand",pos:"noun",cat:"places"},
+  {en:"mountain",fr:"montagne",de:"Berg",pos:"noun",cat:"places"},
+  {en:"lake",fr:"lac",de:"See",pos:"noun",cat:"places"},
+  {en:"river",fr:"rivière",de:"Fluss",pos:"noun",cat:"places"},
+  {en:"forest",fr:"forêt",de:"Wald",pos:"noun",cat:"places"},
+  {en:"viewpoint",fr:"belvédère",de:"Aussichtspunkt",pos:"noun",cat:"places"},
+  {en:"toilet / WC",fr:"toilettes",de:"Toilette / WC",pos:"noun",cat:"places"},
+  {en:"entrance",fr:"entrée",de:"Eingang",pos:"noun",cat:"places"},
+  {en:"exit",fr:"sortie",de:"Ausgang",pos:"noun",cat:"places"},
+  {en:"open",fr:"ouvert",de:"offen / geöffnet",pos:"adj",cat:"places"},
+  {en:"closed",fr:"fermé",de:"geschlossen",pos:"adj",cat:"places"},
+  {en:"free entry",fr:"entrée gratuite",de:"freier Eintritt",pos:"noun",cat:"places"},
+  {en:"ticket office",fr:"billetterie",de:"Kasse",pos:"noun",cat:"places"},
+  {en:"post office",fr:"poste",de:"Post",pos:"noun",cat:"places"},
+  {en:"bank",fr:"banque",de:"Bank",pos:"noun",cat:"places"},
+  {en:"restaurant",fr:"restaurant",de:"Restaurant",pos:"noun",cat:"places"},
+  {en:"café",fr:"café",de:"Café",pos:"noun",cat:"places"},
+  {en:"bar",fr:"bar",de:"Bar",pos:"noun",cat:"places"},
+
+  // ── COMMON ADJECTIVES ──
+  {en:"good",fr:"bon / bonne",de:"gut",pos:"adj",cat:"adjectives"},
+  {en:"bad",fr:"mauvais",de:"schlecht",pos:"adj",cat:"adjectives"},
+  {en:"big / large",fr:"grand",de:"groß",pos:"adj",cat:"adjectives"},
+  {en:"small / little",fr:"petit",de:"klein",pos:"adj",cat:"adjectives"},
+  {en:"hot",fr:"chaud",de:"heiß",pos:"adj",cat:"adjectives"},
+  {en:"cold",fr:"froid",de:"kalt",pos:"adj",cat:"adjectives"},
+  {en:"warm",fr:"chaud",de:"warm",pos:"adj",cat:"adjectives"},
+  {en:"fast / quick",fr:"rapide",de:"schnell",pos:"adj",cat:"adjectives"},
+  {en:"slow",fr:"lent",de:"langsam",pos:"adj",cat:"adjectives"},
+  {en:"full",fr:"plein",de:"voll",pos:"adj",cat:"adjectives"},
+  {en:"empty",fr:"vide",de:"leer",pos:"adj",cat:"adjectives"},
+  {en:"open",fr:"ouvert",de:"offen",pos:"adj",cat:"adjectives"},
+  {en:"closed",fr:"fermé",de:"geschlossen",pos:"adj",cat:"adjectives"},
+  {en:"beautiful",fr:"beau / belle",de:"schön",pos:"adj",cat:"adjectives"},
+  {en:"clean",fr:"propre",de:"sauber",pos:"adj",cat:"adjectives"},
+  {en:"dirty",fr:"sale",de:"schmutzig",pos:"adj",cat:"adjectives"},
+  {en:"quiet",fr:"calme",de:"ruhig",pos:"adj",cat:"adjectives"},
+  {en:"noisy",fr:"bruyant",de:"laut",pos:"adj",cat:"adjectives"},
+  {en:"easy",fr:"facile",de:"einfach",pos:"adj",cat:"adjectives"},
+  {en:"difficult",fr:"difficile",de:"schwierig",pos:"adj",cat:"adjectives"},
+  {en:"important",fr:"important",de:"wichtig",pos:"adj",cat:"adjectives"},
+  {en:"urgent",fr:"urgent",de:"dringend",pos:"adj",cat:"adjectives"},
+  {en:"broken",fr:"cassé",de:"kaputt",pos:"adj",cat:"adjectives"},
+  {en:"lost",fr:"perdu",de:"verloren",pos:"adj",cat:"adjectives"},
+  {en:"tired",fr:"fatigué",de:"müde",pos:"adj",cat:"adjectives"},
+  {en:"hungry",fr:"affamé",de:"hungrig",pos:"adj",cat:"adjectives"},
+  {en:"thirsty",fr:"assoiffé",de:"durstig",pos:"adj",cat:"adjectives"},
+  {en:"sick",fr:"malade",de:"krank",pos:"adj",cat:"adjectives"},
+  {en:"happy",fr:"heureux",de:"glücklich",pos:"adj",cat:"adjectives"},
+  {en:"amazing / incredible",fr:"incroyable",de:"unglaublich",pos:"adj",cat:"adjectives"},
+
+  // ── COMMON VERBS ──
+  {en:"to go",fr:"aller",de:"gehen / fahren",pos:"verb",cat:"verbs"},
+  {en:"to come",fr:"venir",de:"kommen",pos:"verb",cat:"verbs"},
+  {en:"to want",fr:"vouloir",de:"wollen",pos:"verb",cat:"verbs"},
+  {en:"to need",fr:"avoir besoin de",de:"brauchen",pos:"verb",cat:"verbs"},
+  {en:"to have",fr:"avoir",de:"haben",pos:"verb",cat:"verbs"},
+  {en:"to be",fr:"être",de:"sein",pos:"verb",cat:"verbs"},
+  {en:"to eat",fr:"manger",de:"essen",pos:"verb",cat:"verbs"},
+  {en:"to drink",fr:"boire",de:"trinken",pos:"verb",cat:"verbs"},
+  {en:"to pay",fr:"payer",de:"zahlen",pos:"verb",cat:"verbs"},
+  {en:"to book / reserve",fr:"réserver",de:"reservieren / buchen",pos:"verb",cat:"verbs"},
+  {en:"to help",fr:"aider",de:"helfen",pos:"verb",cat:"verbs"},
+  {en:"to find",fr:"trouver",de:"finden",pos:"verb",cat:"verbs"},
+  {en:"to understand",fr:"comprendre",de:"verstehen",pos:"verb",cat:"verbs"},
+  {en:"to speak",fr:"parler",de:"sprechen",pos:"verb",cat:"verbs"},
+  {en:"to call",fr:"appeler",de:"anrufen",pos:"verb",cat:"verbs"},
+  {en:"to open",fr:"ouvrir",de:"öffnen",pos:"verb",cat:"verbs"},
+  {en:"to close",fr:"fermer",de:"schließen",pos:"verb",cat:"verbs"},
+  {en:"to wait",fr:"attendre",de:"warten",pos:"verb",cat:"verbs"},
+  {en:"to buy",fr:"acheter",de:"kaufen",pos:"verb",cat:"verbs"},
+  {en:"to take",fr:"prendre",de:"nehmen",pos:"verb",cat:"verbs"},
+  {en:"to give",fr:"donner",de:"geben",pos:"verb",cat:"verbs"},
+  {en:"to show",fr:"montrer",de:"zeigen",pos:"verb",cat:"verbs"},
+  {en:"to know",fr:"savoir",de:"wissen",pos:"verb",cat:"verbs"},
+  {en:"to like",fr:"aimer",de:"mögen",pos:"verb",cat:"verbs"},
+  {en:"to leave",fr:"partir",de:"abfahren / weggehen",pos:"verb",cat:"verbs"},
+  {en:"to arrive",fr:"arriver",de:"ankommen",pos:"verb",cat:"verbs"},
+  {en:"to change",fr:"changer",de:"wechseln",pos:"verb",cat:"verbs"},
+  {en:"to repeat",fr:"répéter",de:"wiederholen",pos:"verb",cat:"verbs"},
+
+  // ── WEATHER ──
+  {en:"weather",fr:"météo / temps",de:"Wetter",pos:"noun",cat:"weather"},
+  {en:"sun / sunny",fr:"soleil / ensoleillé",de:"Sonne / sonnig",pos:"noun",cat:"weather"},
+  {en:"cloud / cloudy",fr:"nuage / nuageux",de:"Wolke / bewölkt",pos:"noun",cat:"weather"},
+  {en:"rain / rainy",fr:"pluie / pluvieux",de:"Regen / regnerisch",pos:"noun",cat:"weather"},
+  {en:"snow / snowy",fr:"neige / neigeux",de:"Schnee / schneeig",pos:"noun",cat:"weather"},
+  {en:"wind / windy",fr:"vent / venteux",de:"Wind / windig",pos:"noun",cat:"weather"},
+  {en:"fog / foggy",fr:"brouillard / brumeux",de:"Nebel / neblig",pos:"noun",cat:"weather"},
+  {en:"storm",fr:"tempête",de:"Sturm",pos:"noun",cat:"weather"},
+  {en:"thunder",fr:"tonnerre",de:"Donner",pos:"noun",cat:"weather"},
+  {en:"temperature",fr:"température",de:"Temperatur",pos:"noun",cat:"weather"},
+  {en:"degrees",fr:"degrés",de:"Grad",pos:"noun",cat:"weather"},
+  {en:"forecast",fr:"prévisions",de:"Vorhersage",pos:"noun",cat:"weather"},
+  {en:"cold (weather)",fr:"froid",de:"kalt",pos:"adj",cat:"weather"},
+  {en:"warm (weather)",fr:"chaud",de:"warm",pos:"adj",cat:"weather"},
+  {en:"freezing",fr:"glacial",de:"eiskalt",pos:"adj",cat:"weather"},
+];
+
+const DICT_CATS = [
+  {id:'all',label:'All'},
+  {id:'food',label:'🍽 Food & Drink'},
+  {id:'travel',label:'🚆 Travel'},
+  {id:'accommodation',label:'🏨 Hotels'},
+  {id:'shopping',label:'🛍 Shopping'},
+  {id:'ski',label:'⛷️ Ski'},
+  {id:'health',label:'🚑 Health'},
+  {id:'places',label:'📍 Places'},
+  {id:'people',label:'🧑 People & Body'},
+  {id:'adjectives',label:'💬 Adjectives'},
+  {id:'verbs',label:'⚡ Verbs'},
+  {id:'weather',label:'🌤 Weather'},
+];
+
+let dictCat = 'all';
+
+function initDict() {
+  const row = document.getElementById('dictFilterRow');
+  row.innerHTML = DICT_CATS.map(c =>
+    `<button class="dict-pill ${c.id === dictCat ? 'on' : ''}" onclick="setDictCat('${c.id}')">${c.label}</button>`
+  ).join('');
+  renderDict();
+}
+
+function setDictCat(id) {
+  dictCat = id;
+  document.querySelectorAll('.dict-pill').forEach(p => p.classList.remove('on'));
+  event.target.classList.add('on');
+  renderDict();
+}
+
+function clearDictSearch() {
+  document.getElementById('dictInput').value = '';
+  document.getElementById('dictClearBtn').style.display = 'none';
+  renderDict();
+}
+
+function renderDict() {
+  const q = (document.getElementById('dictInput').value || '').toLowerCase().trim();
+  document.getElementById('dictClearBtn').style.display = q ? 'block' : 'none';
+
+  let results = DICT;
+  if (dictCat !== 'all') results = results.filter(w => w.cat === dictCat);
+  if (q) {
+    results = results.filter(w =>
+      w.en.toLowerCase().includes(q) ||
+      w.fr.toLowerCase().includes(q) ||
+      w.de.toLowerCase().includes(q)
+    );
+  }
+
+  const countEl = document.getElementById('dictCount');
+  countEl.textContent = q || dictCat !== 'all'
+    ? `${results.length} word${results.length !== 1 ? 's' : ''} found`
+    : `${DICT.length} words — search or filter above`;
+
+  const list = document.getElementById('dictList');
+  if (results.length === 0) {
+    list.innerHTML = `<div class="dict-empty">No words matched "${escHtml(q)}"</div>`;
+    return;
+  }
+
+  list.innerHTML = results.map(w => `
+    <div class="dict-card">
+      <div class="dict-en">${escHtml(highlight(w.en, q))}</div>
+      <div class="dict-fr">${escHtml(highlight(w.fr, q))}</div>
+      <div class="dict-de">${escHtml(highlight(w.de, q))}</div>
+    </div>
+  `).join('');
+}
+
+function highlight(text, q) {
+  // Just return text — HTML escaping handles safety, no raw HTML injection needed
+  return text;
 }
 
 // ═══════════════════════════════════════════

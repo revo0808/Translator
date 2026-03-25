@@ -1,6 +1,6 @@
 {
-  "name": "Euro Fling — Travel Translator",
-  "short_name": "Euro Fling",
+  "name": "Euro Spring Fling Translator",
+  "short_name": "Euro Spring Fling",
   "description": "Conversational travel translator for French and German",
   "start_url": "./index.html",
   "display": "standalone",
