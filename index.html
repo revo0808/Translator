@@ -435,7 +435,33 @@
       font-size: 14px; color: #c04040; font-style: italic;
       padding: 8px 14px 10px;
     }
-    /* ── DESKTOP RESPONSIVE ── */
+    .theme-btn {
+      background: rgba(255,255,255,0.1); border: none;
+      border-radius: 8px; padding: 6px 8px;
+      font-size: 17px; cursor: pointer; touch-action: manipulation;
+      line-height: 1;
+    }
+    .theme-btn:active { opacity: 0.7; }
+
+    /* ── THEME PICKER ── */
+    .theme-opt {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+      cursor: pointer; touch-action: manipulation;
+    }
+    .theme-opt:last-child { border-bottom: none; }
+    .theme-opt:active { background: var(--bg2); }
+    .theme-swatches {
+      display: flex; gap: 4px; flex-shrink: 0;
+    }
+    .theme-swatch {
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 1.5px solid rgba(0,0,0,0.1);
+    }
+    .theme-opt-info { flex: 1; }
+    .theme-opt-name { font-size: 15px; font-weight: 700; color: var(--text); }
+    .theme-opt-desc { font-size: 12px; color: var(--text2); margin-top: 1px; }
+    .theme-check { font-size: 18px; color: var(--accent); }
     @media (min-width: 600px) {
       body { align-items: center; background: var(--bg2); }
       body > * { width: 100%; max-width: 480px; }
@@ -455,7 +481,10 @@
 <!-- Header -->
 <header class="header">
   <div class="logo">Euro Spring <span>Fling</span></div>
-  <div class="offline-pill" id="offlinePill">✈ Offline Mode</div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="offline-pill" id="offlinePill">✈ Offline Mode</div>
+    <button class="theme-btn" onclick="openThemePicker()" title="Change theme">🎨</button>
+  </div>
 </header>
 
 <!-- Language Bar -->
@@ -561,10 +590,164 @@
   </div>
 </div>
 
+<!-- Theme Picker Modal -->
+<div class="overlay" id="themeOverlay" onclick="maybeCloseTheme(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Choose a Theme</div>
+    <div id="themeOptions"></div>
+    <div style="padding:14px 20px 4px;">
+      <div style="font-size:12px;color:var(--text2);text-align:center;">Your choice is saved automatically</div>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
+// ═══════════════════════════════════════════
+// THEMES
+// ═══════════════════════════════════════════
+const THEMES = [
+  {
+    id: 'espresso',
+    name: '☕ Espresso',
+    desc: 'Warm browns — the default',
+    swatches: ['#f5f0e8','#c96d40','#231710'],
+    light: {
+      '--bg':'#f5f0e8','--bg2':'#ede7d9','--surface':'#fffdf8',
+      '--border':'#d5c9b2','--text':'#2a1a0e','--text2':'#7a6550',
+      '--accent':'#c96d40','--accent-soft':'rgba(201,109,64,0.12)',
+      '--tab-bg':'#231710','--tab-active':'#e07845','--shadow':'rgba(42,26,14,0.1)'
+    },
+    dark: {
+      '--bg':'#1a1510','--bg2':'#241d16','--surface':'#201912',
+      '--border':'#3a2e22','--text':'#f0e8d5','--text2':'#9a856e',
+      '--accent':'#d47848','--accent-soft':'rgba(212,120,72,0.15)',
+      '--tab-bg':'#0f0c08','--tab-active':'#d47848','--shadow':'rgba(0,0,0,0.4)'
+    }
+  },
+  {
+    id: 'alpine',
+    name: '🏔 Alpine',
+    desc: 'Crisp blues & snow whites',
+    swatches: ['#eef3f8','#3a7bbf','#0f2340'],
+    light: {
+      '--bg':'#eef3f8','--bg2':'#dde8f2','--surface':'#f8fbff',
+      '--border':'#b8d0e8','--text':'#0f2340','--text2':'#4a6a8a',
+      '--accent':'#3a7bbf','--accent-soft':'rgba(58,123,191,0.12)',
+      '--tab-bg':'#0f2340','--tab-active':'#5a9fd4','--shadow':'rgba(15,35,64,0.1)'
+    },
+    dark: {
+      '--bg':'#0d1b2a','--bg2':'#152236','--surface':'#1a2a3d',
+      '--border':'#1e3550','--text':'#ddeeff','--text2':'#6a90b0',
+      '--accent':'#5a9fd4','--accent-soft':'rgba(90,159,212,0.15)',
+      '--tab-bg':'#080f18','--tab-active':'#5a9fd4','--shadow':'rgba(0,0,0,0.5)'
+    }
+  },
+  {
+    id: 'meadow',
+    name: '🌸 Spring Meadow',
+    desc: 'Soft greens & blush pinks',
+    swatches: ['#f0f5ed','#5a9e6f','#2d1f3d'],
+    light: {
+      '--bg':'#f0f5ed','--bg2':'#e2ede0','--surface':'#f8fbf6',
+      '--border':'#bcd6b8','--text':'#1a2e1c','--text2':'#5a7a5c',
+      '--accent':'#5a9e6f','--accent-soft':'rgba(90,158,111,0.12)',
+      '--tab-bg':'#1e3522','--tab-active':'#72b885','--shadow':'rgba(30,53,34,0.1)'
+    },
+    dark: {
+      '--bg':'#111a12','--bg2':'#182019','--surface':'#1c2a1e',
+      '--border':'#243528','--text':'#dff0e0','--text2':'#6a9070',
+      '--accent':'#72b885','--accent-soft':'rgba(114,184,133,0.15)',
+      '--tab-bg':'#0a1009','--tab-active':'#72b885','--shadow':'rgba(0,0,0,0.5)'
+    }
+  },
+  {
+    id: 'sunset',
+    name: '🌅 Chamonix Sunset',
+    desc: 'Golden hour alpenglow',
+    swatches: ['#fdf3e7','#d4823a','#2d1505'],
+    light: {
+      '--bg':'#fdf3e7','--bg2':'#f7e8d4','--surface':'#fffaf4',
+      '--border':'#e8ccaa','--text':'#2d1505','--text2':'#8a6040',
+      '--accent':'#d4823a','--accent-soft':'rgba(212,130,58,0.12)',
+      '--tab-bg':'#2d1505','--tab-active':'#e8993e','--shadow':'rgba(45,21,5,0.12)'
+    },
+    dark: {
+      '--bg':'#1c0e04','--bg2':'#261508','--surface':'#2a1a0a',
+      '--border':'#3d2510','--text':'#fde8c8','--text2':'#9a7050',
+      '--accent':'#e8993e','--accent-soft':'rgba(232,153,62,0.15)',
+      '--tab-bg':'#0f0702','--tab-active':'#e8993e','--shadow':'rgba(0,0,0,0.5)'
+    }
+  },
+  {
+    id: 'midnight',
+    name: '🌙 Zermatt Midnight',
+    desc: 'Deep slate & violet',
+    swatches: ['#f0eef8','#7c5cbf','#18122e'],
+    light: {
+      '--bg':'#f0eef8','--bg2':'#e4e0f4','--surface':'#faf9ff',
+      '--border':'#c8bfea','--text':'#18122e','--text2':'#5a4e80',
+      '--accent':'#7c5cbf','--accent-soft':'rgba(124,92,191,0.12)',
+      '--tab-bg':'#18122e','--tab-active':'#9b7bd4','--shadow':'rgba(24,18,46,0.12)'
+    },
+    dark: {
+      '--bg':'#100c1e','--bg2':'#181228','--surface':'#1e1830',
+      '--border':'#2a2044','--text':'#e8e0ff','--text2':'#7a6aaa',
+      '--accent':'#9b7bd4','--accent-soft':'rgba(155,123,212,0.15)',
+      '--tab-bg':'#0a0814','--tab-active':'#9b7bd4','--shadow':'rgba(0,0,0,0.5)'
+    }
+  }
+];
+
+let currentTheme = localStorage.getItem('theme') || 'espresso';
+
+function applyTheme(id, save = true) {
+  const theme = THEMES.find(t => t.id === id) || THEMES[0];
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const vars = isDark ? theme.dark : theme.light;
+  const root = document.documentElement.style;
+  Object.entries(vars).forEach(([k, v]) => root.setProperty(k, v));
+  currentTheme = id;
+  if (save) localStorage.setItem('theme', id);
+}
+
+function openThemePicker() {
+  const container = document.getElementById('themeOptions');
+  container.innerHTML = THEMES.map(t => `
+    <div class="theme-opt" onclick="selectTheme('${t.id}')">
+      <div class="theme-swatches">
+        ${t.swatches.map(s => `<div class="theme-swatch" style="background:${s}"></div>`).join('')}
+      </div>
+      <div class="theme-opt-info">
+        <div class="theme-opt-name">${t.name}</div>
+        <div class="theme-opt-desc">${t.desc}</div>
+      </div>
+      ${t.id === currentTheme ? '<span class="theme-check">✓</span>' : ''}
+    </div>
+  `).join('');
+  document.getElementById('themeOverlay').classList.add('show');
+}
+
+function selectTheme(id) {
+  applyTheme(id);
+  document.getElementById('themeOverlay').classList.remove('show');
+  showToast('Theme updated!');
+}
+
+function maybeCloseTheme(e) {
+  if (e.target === document.getElementById('themeOverlay')) {
+    document.getElementById('themeOverlay').classList.remove('show');
+  }
+}
+
+// Re-apply on system dark/light change
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  applyTheme(currentTheme, false);
+});
+
 // ═══════════════════════════════════════════
 // LANGUAGE CONFIG
 // ═══════════════════════════════════════════
@@ -920,6 +1103,7 @@ let phraseStars = JSON.parse(localStorage.getItem('stars') || '{}');
 // INIT
 // ═══════════════════════════════════════════
 window.addEventListener('load', () => {
+  applyTheme(currentTheme, false);
   updateLangBar();
   buildCatBar();
   renderPhrases();
