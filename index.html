@@ -407,11 +407,6 @@
       font-family: 'Playfair Display', serif; font-style: italic;
       font-size: 14px; color: #6a8fb0;
     }
-    .dict-pos {
-      font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
-      text-transform: uppercase; color: var(--text2); grid-column: 1 / -1;
-      margin-bottom: 1px;
-    }
     .dict-header {
       display: grid; grid-template-columns: 1fr 1fr 1fr;
       gap: 0 10px; padding: 6px 14px 2px;
@@ -435,6 +430,38 @@
       font-size: 14px; color: #c04040; font-style: italic;
       padding: 8px 14px 10px;
     }
+    /* ── PHONETIC ── */
+    .phonetic-text {
+      padding: 0 14px 12px;
+      font-size: 13px; color: var(--text2);
+      font-style: italic; line-height: 1.5;
+      border-top: 1px dashed var(--border);
+      margin-top: 2px; padding-top: 8px;
+    }
+    .phonetic-label {
+      font-size: 10px; font-weight: 800; letter-spacing: 0.07em;
+      text-transform: uppercase; color: var(--text2);
+      opacity: 0.7; margin-bottom: 3px;
+    }
+
+    /* ── VOICE PICKER ── */
+    .voice-opt {
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px 20px; border-bottom: 1px solid var(--border);
+      cursor: pointer; touch-action: manipulation;
+    }
+    .voice-opt:last-child { border-bottom: none; }
+    .voice-opt:active { background: var(--bg2); }
+    .voice-flag { font-size: 22px; flex-shrink: 0; }
+    .voice-info { flex: 1; }
+    .voice-name { font-size: 15px; font-weight: 700; color: var(--text); }
+    .voice-locale { font-size: 12px; color: var(--text2); margin-top: 1px; }
+    .voice-check { font-size: 18px; color: var(--accent); }
+    .voice-none {
+      padding: 24px 20px; text-align: center;
+      font-size: 14px; color: var(--text2); font-style: italic; line-height: 1.7;
+    }
+
     .theme-btn {
       background: rgba(255,255,255,0.1); border: none;
       border-radius: 8px; padding: 6px 8px;
@@ -521,10 +548,13 @@
         <div class="card-label" id="outputLbl">Français</div>
         <div class="dots" id="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
         <div class="output-text" id="outputText"><span class="output-placeholder">Translation appears here</span></div>
+        <div class="phonetic-text" id="phoneticText" style="display:none"></div>
         <div class="match-note" id="matchNote" style="display:none"></div>
         <div class="error-msg" id="errorMsg" style="display:none"></div>
         <div class="card-footer">
           <div class="output-actions">
+            <button class="act-btn" id="speakBtn" onclick="speakOutput()" style="display:none">🔊 Play</button>
+            <button class="act-btn" id="voiceBtn" onclick="openVoicePicker()" style="display:none" title="Change voice">🎙 Voice</button>
             <button class="act-btn" id="copyBtn" onclick="copyOutput()">📋 Copy</button>
             <button class="act-btn" id="savBtn" onclick="saveToFavs()">☆ Save</button>
           </div>
@@ -590,6 +620,18 @@
   </div>
 </div>
 
+<!-- Voice Picker Modal -->
+<div class="overlay" id="voiceOverlay" onclick="maybeCloseVoice(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="voicePickerTitle">Choose a Voice</div>
+    <div id="voiceOptions"></div>
+    <div style="padding:10px 20px 4px;">
+      <div style="font-size:12px;color:var(--text2);text-align:center;">Available voices depend on your device</div>
+    </div>
+  </div>
+</div>
+
 <!-- Theme Picker Modal -->
 <div class="overlay" id="themeOverlay" onclick="maybeCloseTheme(event)">
   <div class="sheet">
@@ -606,6 +648,198 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// ═══════════════════════════════════════════
+// TEXT-TO-SPEECH & VOICE MANAGEMENT
+// ═══════════════════════════════════════════
+const LOCALE_FLAG = { 'fr-FR':'🇫🇷','fr-CA':'🇨🇦','fr-BE':'🇧🇪','fr-CH':'🇨🇭',
+                       'de-DE':'🇩🇪','de-AT':'🇦🇹','de-CH':'🇨🇭',
+                       'en-US':'🇺🇸','en-GB':'🇬🇧','en-AU':'🇦🇺' };
+
+let availableVoices = [];
+let selectedVoices  = {}; // { fr: SpeechSynthesisVoice, de: ..., en: ... }
+
+function loadVoices() {
+  availableVoices = window.speechSynthesis.getVoices();
+  // Pre-select best default per language
+  ['fr','de','en'].forEach(lang => {
+    if (!selectedVoices[lang]) {
+      const match = availableVoices.find(v => v.lang.startsWith(lang + '-')) ||
+                    availableVoices.find(v => v.lang.startsWith(lang));
+      if (match) selectedVoices[lang] = match;
+    }
+  });
+}
+
+if (window.speechSynthesis) {
+  loadVoices();
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+function speakOutput() {
+  if (!currentOutput || !window.speechSynthesis) return;
+  const btn = document.getElementById('speakBtn');
+  if (window.speechSynthesis.speaking) {
+    window.speechSynthesis.cancel();
+    btn.textContent = '🔊 Play';
+    return;
+  }
+  const utt = new SpeechSynthesisUtterance(currentOutput);
+  const voice = selectedVoices[toLang];
+  if (voice) utt.voice = voice;
+  utt.lang = voice ? voice.lang : (toLang + '-' + toLang.toUpperCase());
+  utt.rate = 0.88;
+  utt.pitch = 1;
+  btn.textContent = '⏹ Stop';
+  utt.onend = utt.onerror = () => { btn.textContent = '🔊 Play'; };
+  window.speechSynthesis.speak(utt);
+}
+
+function openVoicePicker() {
+  const lang = toLang;
+  const voices = availableVoices.filter(v => v.lang.startsWith(lang));
+  document.getElementById('voicePickerTitle').textContent =
+    `Voice for ${LANGS[lang].flag} ${LANGS[lang].name}`;
+  const container = document.getElementById('voiceOptions');
+  if (voices.length === 0) {
+    container.innerHTML = `<div class="voice-none">No ${LANGS[lang].name} voices found on this device.<br>Try Settings → Accessibility → Spoken Content → Voices on iPhone.</div>`;
+  } else {
+    container.innerHTML = voices.map(v => {
+      const flag = LOCALE_FLAG[v.lang] || '🌐';
+      const isSel = selectedVoices[lang] && selectedVoices[lang].name === v.name;
+      return `<div class="voice-opt" onclick="selectVoice('${lang}','${escAttr(v.name)}')">
+        <span class="voice-flag">${flag}</span>
+        <div class="voice-info">
+          <div class="voice-name">${escHtml(v.name.replace(/\(.*\)/,'').trim())}</div>
+          <div class="voice-locale">${v.lang}${v.localService ? ' · On-device' : ' · Online'}</div>
+        </div>
+        ${isSel ? '<span class="voice-check">✓</span>' : ''}
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('voiceOverlay').classList.add('show');
+}
+
+function selectVoice(lang, name) {
+  const voice = availableVoices.find(v => v.name === name);
+  if (voice) selectedVoices[lang] = voice;
+  document.getElementById('voiceOverlay').classList.remove('show');
+  showToast('Voice updated!');
+  if (currentOutput) speakOutput();
+}
+
+function maybeCloseVoice(e) {
+  if (e.target === document.getElementById('voiceOverlay'))
+    document.getElementById('voiceOverlay').classList.remove('show');
+}
+
+// ═══════════════════════════════════════════
+// PHONETIC PRONUNCIATION ENGINE
+// ═══════════════════════════════════════════
+function getPhonetic(text, lang) {
+  if (lang === 'en') return null; // no guide needed for English output
+  if (lang === 'fr') return frPhonetic(text);
+  if (lang === 'de') return dePhonetic(text);
+  return null;
+}
+
+function frPhonetic(text) {
+  let t = text.toLowerCase();
+  // Multi-char replacements first (order matters)
+  const rules = [
+    [/qu/g,       'k'],
+    [/eau|eaux/g, 'oh'],
+    [/aux|au/g,   'oh'],
+    [/oeu|œu/g,   'uh'],
+    [/eu(?=[^aeiou]|$)/g,'uh'],
+    [/ou/g,       'oo'],
+    [/oi/g,       'wah'],
+    [/œ/g,        'uh'],
+    [/oe/g,       'uh'],
+    [/ai|ei|ais|ait|aient/g,'ay'],
+    [/ê/g,        'eh'],
+    [/é/g,        'ay'],
+    [/è|ë/g,      'eh'],
+    [/â/g,        'ah'],
+    [/ô/g,        'oh'],
+    [/û/g,        'oo'],
+    [/î/g,        'ee'],
+    [/ï/g,        'ee'],
+    [/ç/g,        's'],
+    [/ch/g,       'sh'],
+    [/gn/g,       'ny'],
+    [/ph/g,       'f'],
+    // Nasal vowels
+    [/in(?=[^aeiou]|$)|im(?=[bp])|ain|aim|ein/g, 'an (nasal)'],
+    [/en(?=[^aeiou]|$)|em(?=[bp])|an(?=[^aeiou]|$)|am(?=[bp])/g,'on (nasal)'],
+    [/on(?=[^aeiou]|$)|om(?=[bp])/g,'ohn (nasal)'],
+    [/un(?=[^aeiou]|$)|um(?=[bp])/g,'un (nasal)'],
+    // Consonant sounds
+    [/j/g,        'zh'],
+    [/\bh/g,      ''],  // silent h at start
+    [/ille/g,     'ee'],
+    [/ll/g,       'y'],
+    [/x(?=[aeiou])/g,'gz'],
+    [/x/g,        'ks'],
+    [/r/g,        'r̈'],  // indicate guttural r
+    // Final silent consonants (rough approximation)
+    [/[dst]$/g,   ''],
+    [/[pq]$/g,    ''],
+  ];
+  rules.forEach(([pat, rep]) => { t = t.replace(pat, rep); });
+  // Cleanup double spaces
+  t = t.replace(/\s+/g,' ').trim();
+  return t;
+}
+
+function dePhonetic(text) {
+  let t = text.toLowerCase();
+  const rules = [
+    [/tsch/g,      'ch'],
+    [/sch/g,       'sh'],
+    [/ck/g,        'k'],
+    [/ph/g,        'f'],
+    [/äu|eu/g,     'oy'],
+    [/au/g,        'ow'],
+    [/ei|ai/g,     'eye'],
+    [/ie/g,        'ee'],
+    [/ü/g,         'ew'],
+    [/ö/g,         'ur'],
+    [/ä/g,         'eh'],
+    [/ß/g,         'ss'],
+    [/ch(?=[aou])/g,'kh'],  // ach-laut
+    [/ch/g,        'kh'],   // ich-laut (approx)
+    [/\bsp/g,      'shp'],
+    [/\bst/g,      'sht'],
+    [/(?<=[aeiouäöü])st/g,'sht'],
+    [/(?<=[aeiouäöü])sp/g,'shp'],
+    [/w/g,         'v'],
+    [/v/g,         'f'],
+    [/z/g,         'ts'],
+    [/qu/g,        'kv'],
+    [/j/g,         'y'],
+    [/r/g,         'r̈'],   // guttural r
+    [/ng(?=[^aeiou]|$)/g,'ng'],
+    // Final devoicing
+    [/b$/g,        'p'],
+    [/d$/g,        't'],
+    [/g$/g,        'k'],
+    // Final -e is a schwa
+    [/e$/g,        'uh'],
+  ];
+  rules.forEach(([pat, rep]) => { t = t.replace(pat, rep); });
+  t = t.replace(/\s+/g,' ').trim();
+  return t;
+}
+
+function showPhonetic(text, lang) {
+  const el = document.getElementById('phoneticText');
+  if (lang === 'en' || !text) { el.style.display = 'none'; return; }
+  const phonetic = getPhonetic(text, lang);
+  if (!phonetic) { el.style.display = 'none'; return; }
+  el.innerHTML = `<div class="phonetic-label">Say it like:</div><div>${escHtml(phonetic)}</div>`;
+  el.style.display = 'block';
+}
+
 // ═══════════════════════════════════════════
 // THEMES
 // ═══════════════════════════════════════════
@@ -1315,6 +1549,12 @@ function showOutput(text) {
   el.textContent = text;
   el.style.display = 'block';
   document.getElementById('savBtn').classList.remove('active-fav');
+  // Show phonetic guide
+  showPhonetic(text, toLang);
+  // Show speak + voice buttons if TTS available
+  const hasTTS = !!window.speechSynthesis;
+  document.getElementById('speakBtn').style.display = hasTTS ? '' : 'none';
+  document.getElementById('voiceBtn').style.display = hasTTS ? '' : 'none';
 }
 
 function hideOutput() {
@@ -1328,7 +1568,11 @@ function clearOutput() {
   document.getElementById('outputText').style.display = 'block';
   document.getElementById('matchNote').style.display = 'none';
   document.getElementById('errorMsg').style.display = 'none';
+  document.getElementById('phoneticText').style.display = 'none';
+  document.getElementById('speakBtn').style.display = 'none';
+  document.getElementById('voiceBtn').style.display = 'none';
   document.getElementById('savBtn').classList.remove('active-fav');
+  window.speechSynthesis && window.speechSynthesis.cancel();
 }
 
 function clearAll() {
@@ -1409,16 +1653,15 @@ function renderFavorites() {
 function buildCatBar() {
   const bar = document.getElementById('catBar');
   bar.innerHTML = CATEGORIES.map(c =>
-    `<button class="cat-pill ${c.id === activeCat ? 'on' : ''}" onclick="setCat('${c.id}')">${c.emoji} ${c.label}</button>`
+    `<button class="cat-pill ${c.id === activeCat ? 'on' : ''}" data-cat="${c.id}" onclick="setCat('${c.id}')">${c.emoji} ${c.label}</button>`
   ).join('');
 }
 
 function setCat(id) {
   activeCat = id;
-  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('on'));
-  document.querySelectorAll('.cat-pill').forEach(p => {
-    if (p.textContent.trim().includes(CATEGORIES.find(c=>c.id===id)?.label)) p.classList.add('on');
-  });
+  document.querySelectorAll('.cat-pill').forEach(p =>
+    p.classList.toggle('on', p.dataset.cat === id)
+  );
   renderPhrases();
 }
 
@@ -1920,15 +2163,15 @@ let dictCat = 'all';
 function initDict() {
   const row = document.getElementById('dictFilterRow');
   row.innerHTML = DICT_CATS.map(c =>
-    `<button class="dict-pill ${c.id === dictCat ? 'on' : ''}" onclick="setDictCat('${c.id}')">${c.label}</button>`
+    `<button class="dict-pill ${c.id === dictCat ? 'on' : ''}" onclick="setDictCat('${c.id}',this)">${c.label}</button>`
   ).join('');
   renderDict();
 }
 
-function setDictCat(id) {
+function setDictCat(id, el) {
   dictCat = id;
   document.querySelectorAll('.dict-pill').forEach(p => p.classList.remove('on'));
-  event.target.classList.add('on');
+  el.classList.add('on');
   renderDict();
 }
 
@@ -1965,16 +2208,11 @@ function renderDict() {
 
   list.innerHTML = results.map(w => `
     <div class="dict-card">
-      <div class="dict-en">${escHtml(highlight(w.en, q))}</div>
-      <div class="dict-fr">${escHtml(highlight(w.fr, q))}</div>
-      <div class="dict-de">${escHtml(highlight(w.de, q))}</div>
+      <div class="dict-en">${escHtml(w.en)}</div>
+      <div class="dict-fr">${escHtml(w.fr)}</div>
+      <div class="dict-de">${escHtml(w.de)}</div>
     </div>
   `).join('');
-}
-
-function highlight(text, q) {
-  // Just return text — HTML escaping handles safety, no raw HTML injection needed
-  return text;
 }
 
 // ═══════════════════════════════════════════
